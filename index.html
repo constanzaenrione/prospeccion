@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4B168E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.1 (13 oct 2026) -->
+<title>Prospección Inteligente</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</body>
+</html>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna de celular, barra de 5 pestañas abajo, ficha de prospecto a pantalla completa */
+:root{
+  --bg:#F8F5FB; --surface:#FFFFFF; --ink:#1F1630; --muted:#675C78; --line:#E4DCEE;
+  --morado:#4B168E; --morado-suave:#EEE6F8; --dorado:#A0740F; --dorado-suave:#F6EEDB;
+  --sobre-morado:#FFFFFF;
+  --cal:#A8321C; --cal-bg:#FBE6E1; --tib:#8A6208; --tib-bg:#F6EEDB; --fri:#3F5A78; --fri-bg:#E4ECF4;
+  --ok:#1E6B4A;
+  --display:"Fraunces",Georgia,serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#15101F; --surface:#201831; --ink:#F1ECF8; --muted:#A99FBC; --line:#35294B;
+  --morado:#B794F0; --morado-suave:#2C2044; --dorado:#DDB04A; --dorado-suave:#33290F;
+  --sobre-morado:#1A1028;
+  --cal:#F2937D; --cal-bg:#3A1B15; --tib:#DDB04A; --tib-bg:#33290F; --fri:#9DB9D8; --fri-bg:#1B2838;
+  --ok:#6FCFA4; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#15101F; --surface:#201831; --ink:#F1ECF8; --muted:#A99FBC; --line:#35294B;
+  --morado:#B794F0; --morado-suave:#2C2044; --dorado:#DDB04A; --dorado-suave:#33290F;
+  --sobre-morado:#1A1028;
+  --cal:#F2937D; --cal-bg:#3A1B15; --tib:#DDB04A; --tib-bg:#33290F; --fri:#9DB9D8; --fri-bg:#1B2838;
+  --ok:#6FCFA4; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;line-height:1.2}
+p{margin:0}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px}
+.top h1{font-size:1.15rem;color:var(--morado)}
+.estado{font-size:.75rem;color:var(--muted);text-align:right}
+
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:20px 110px;display:flex;flex-direction:column;gap:22px}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec>h2{font-size:1.3rem}
+.sec>h3{font-size:1.05rem}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--dorado);font-weight:600}
+.nota{color:var(--muted);font-size:.9rem}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs button{background:none;border:0;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:.68rem;color:var(--muted);border-radius:10px;min-width:0}
+.tabs button[aria-current="page"]{color:var(--morado);font-weight:600}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+.btn{border:1px solid var(--morado);background:var(--morado);color:var(--sobre-morado);border-radius:12px;padding:12px 16px;font-weight:600;min-height:46px}
+.btn.sec2{background:transparent;color:var(--morado)}
+.btn.suave{background:var(--morado-suave);border-color:transparent;color:var(--morado)}
+.btn.peligro{background:transparent;border-color:var(--line);color:var(--cal)}
+.btn[disabled]{opacity:.55;cursor:default}
+.fila{display:flex;flex-wrap:wrap;gap:8px}
+.fila>.btn{flex:1 1 140px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.lista{display:flex;flex-direction:column;gap:8px}
+.pro{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}
+.pro b{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.pro .sub{grid-column:1;color:var(--muted);font-size:.85rem;min-width:0;overflow-wrap:anywhere}
+.pro .pt{grid-row:1 / span 2;grid-column:2}
+.pt{font-variant-numeric:tabular-nums;font-weight:600;font-size:.85rem;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.pt.cal{background:var(--cal-bg);color:var(--cal)} .pt.tib{background:var(--tib-bg);color:var(--tib)}
+.pt.fri{background:var(--fri-bg);color:var(--fri)} .pt.sin{background:var(--morado-suave);color:var(--muted)}
+.chip{display:inline-block;font-size:.75rem;border-radius:999px;padding:3px 10px;background:var(--morado-suave);color:var(--morado);font-weight:500}
+
+.avance{height:10px;border-radius:999px;background:var(--morado-suave);overflow:hidden}
+.avance i{display:block;height:100%;background:var(--dorado);border-radius:999px}
+
+label.campo{display:flex;flex-direction:column;gap:5px;font-size:.9rem;font-weight:500}
+label.campo small{font-weight:400;color:var(--muted)}
+input[type=text],input[type=url],input[type=number],input[type=email],input[type=password],textarea,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+textarea{min-height:92px;resize:vertical}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--morado);flex:none}
+
+.canal{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline}
+.canal .n{font-family:var(--display);font-size:1.5rem;color:var(--dorado);grid-row:1 / span 2;font-variant-numeric:tabular-nums}
+.busq{display:flex;flex-direction:column;gap:8px}
+.busq .txt{font-weight:600;overflow-wrap:anywhere}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{color:var(--morado);font-weight:600;font-size:.9rem;border:1px solid var(--line);border-radius:999px;padding:7px 12px;text-decoration:none}
+.hecha{font-size:.8rem;color:var(--ok);font-weight:600}
+ul.senales{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem;display:flex;flex-direction:column;gap:3px}
+
+.filtros{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.filtros button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:.85rem;color:var(--muted)}
+.filtros button[aria-pressed="true"]{background:var(--morado);border-color:var(--morado);color:var(--sobre-morado);font-weight:600}
+
+.hoja{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.hoja .barra{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:1}
+.hoja .barra button{background:none;border:0;color:var(--morado);font-weight:600;padding:8px 4px}
+.hoja .wrap{padding-block:18px 40px}
+.dim{display:flex;flex-direction:column;gap:6px}
+.dim .cab{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:.95rem}
+.escala{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.escala button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 0;font-variant-numeric:tabular-nums}
+.escala button[aria-pressed="true"]{background:var(--morado);border-color:var(--morado);color:var(--sobre-morado);font-weight:600}
+
+.barras{display:flex;flex-direction:column;gap:10px}
+.barra-f{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:.9rem}
+.barra-f .avance{grid-column:1 / -1}
+.barra-f b{font-variant-numeric:tabular-nums}
+.tabla{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500}
+
+.vacio{text-align:left;padding:8px 0;display:flex;flex-direction:column;gap:12px}
+.vacio h2{font-size:1.6rem;color:var(--morado)}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:20;margin:0 auto;max-width:420px;
+  background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;font-size:.9rem;text-align:center}
+.acceso{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:32px 60px;display:flex;flex-direction:column;gap:18px}
+.acceso h2{font-size:1.7rem;color:var(--morado)}
+.selector{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--morado-suave);padding:4px;border-radius:12px}
+.selector button{border:0;background:transparent;border-radius:9px;padding:10px;font-weight:600;color:var(--morado)}
+.selector button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.error{color:var(--cal);font-size:.9rem}
+.res{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:start}
+.res .sub{color:var(--muted);font-size:.85rem;overflow-wrap:anywhere;grid-column:1}
+.res b{overflow-wrap:anywhere}
+.res .acc{grid-row:1 / span 3;grid-column:2}
+.res .acc .btn{min-height:38px;padding:8px 12px;font-size:.85rem}
+.costo{font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<section class="acceso" id="acceso" hidden></section>
+
+<header class="top">
+  <h1>Prospección Inteligente</h1>
+  <div class="estado" id="estado"></div>
+</header>
+<main class="wrap" id="view"></main>
+<nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+<section class="hoja" id="hoja" hidden></section>
+<div id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fecha(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function hoy(){return fecha(new Date())}
+function enDias(n){var d=new Date();d.setDate(d.getDate()+n);return fecha(d)}
+function clon(o){return JSON.parse(JSON.stringify(o))}
+function nuevoId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+var CANALES={whatsapp:'WhatsApp',instagram:'Instagram',linkedin:'LinkedIn',facebook:'Facebook',google:'Google',otro:'Otro'};
+var ETAPAS=[['nuevo','Por calificar'],['listo','Por contactar'],['contactada','Contactada'],['conversacion','En conversación'],['propuesta','Propuesta hecha'],['cliente','Cliente'],['descartada','Descartada']];
+function nombreEtapa(e){for(var i=0;i<ETAPAS.length;i++)if(ETAPAS[i][0]===e)return ETAPAS[i][1];return e}
+var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
+
+var S={meta:{perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false},plan:null,hechas:{},metaDiaria:5},
+       pros:{},tab:'hoy',filtro:'todos'};
+var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
+
+/* ---------- Conexión (se guarda solo en este dispositivo) ---------- */
+var CFG_LS='pi-conexion';
+function leerCfg(){try{return JSON.parse(localStorage.getItem(CFG_LS)||'null')}catch(e){return null}}
+function guardarCfg(c){try{localStorage.setItem(CFG_LS,JSON.stringify(c))}catch(e){}}
+var CFG=leerCfg()||{sbUrl:'',sbKey:'',puente:'https://puente-prospeccion.conyenrione.workers.dev',codigo:''};
+var SB=null, UID=null;
+
+/* ---------- Guardado en Supabase ---------- */
+var Store={colas:{},relojes:{},error:false,
+  cacheKey:function(){return 'pi-cache-'+(UID||'x')},
+  leerLocal:function(){try{var r=JSON.parse(localStorage.getItem(this.cacheKey())||'null');if(r){ponMeta(r.meta);S.pros=r.pros||{}}}catch(e){}},
+  guardarLocal:function(){try{localStorage.setItem(this.cacheKey(),JSON.stringify({meta:S.meta,pros:S.pros}))}catch(e){}},
+  enFila:function(k,fn){var self=this;var p=(this.colas[k]||Promise.resolve()).then(fn).then(function(r){if(r&&r.error)throw r.error;self.ok()}).catch(function(){self.falla()});this.colas[k]=p;return p},
+  ok:function(){if(this.error){this.error=false;pintaEstado()}},
+  falla:function(){this.error=true;pintaEstado();toast('No se pudo guardar en tu cuenta. Revisa tu conexión a internet.')},
+  programar:function(k,fn){var self=this;clearTimeout(this.relojes[k]);this.relojes[k]=setTimeout(function(){delete self.relojes[k];self.enFila(k,fn)},700)},
+  meta:function(){this.guardarLocal();this.programar('meta',function(){return SB.from('pi_ajustes').upsert({user_id:UID,data:clon(S.meta),actualizado:new Date().toISOString()})})},
+  pro:function(p){this.guardarLocal();var id=p.id;this.programar('p:'+id,function(){var x=S.pros[id];return x?SB.from('pi_prospectos').upsert({id:id,user_id:UID,data:clon(x),actualizado:new Date().toISOString()}):null})},
+  borrar:function(id){delete S.pros[id];this.guardarLocal();clearTimeout(this.relojes['p:'+id]);delete this.relojes['p:'+id];this.enFila('p:'+id,function(){return SB.from('pi_prospectos').delete().eq('id',id)})},
+  cargar:async function(){
+    var a=await SB.from('pi_ajustes').select('data').eq('user_id',UID).maybeSingle();
+    if(a.error)throw a.error;
+    var p=await SB.from('pi_prospectos').select('id,data').eq('user_id',UID);
+    if(p.error)throw p.error;
+    S.meta={perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false},plan:null,hechas:{},metaDiaria:5};
+    if(a.data&&a.data.data)ponMeta(a.data.data);
+    var n={};(p.data||[]).forEach(function(r){var v=r.data||{};v.id=r.id;n[r.id]=normal(v)});S.pros=n;
+    this.guardarLocal();
+  }
+};
+function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5}}
+function pintaEstado(){$('#estado').textContent=Store.error?'Sin guardar: revisa internet':'Guardado en tu cuenta'}
+
+/* ---------- Pantallas de acceso ---------- */
+var acceso={modo:'entrar',msg:'',cargando:false};
+function mostrarApp(si){$('#acceso').hidden=si;document.querySelector('.top').hidden=!si;$('#view').hidden=!si;$('#tabs').hidden=!si}
+function pantallaConexion(){
+  mostrarApp(false);
+  $('#acceso').innerHTML='<span class="eyebrow">Primera vez en este dispositivo</span><h2>Conectar la app</h2>'+
+   '<p class="nota">Estos datos se guardan solo en este dispositivo. Los encuentras en Supabase, en Project Settings → API.</p>'+
+   '<label class="campo" for="cf-url">Dirección del proyecto (Project URL)<input type="url" id="cf-url" value="'+esc(CFG.sbUrl)+'" placeholder="https://xxxx.supabase.co"></label>'+
+   '<label class="campo" for="cf-key">Clave pública (anon public)<textarea id="cf-key" style="min-height:70px">'+esc(CFG.sbKey)+'</textarea></label>'+
+   '<label class="campo" for="cf-puente">Dirección del puente<input type="url" id="cf-puente" value="'+esc(CFG.puente)+'"></label>'+
+   '<label class="campo" for="cf-codigo">Código de acceso del puente<input type="text" id="cf-codigo" value="'+esc(CFG.codigo)+'" autocomplete="off"></label>'+
+   (acceso.msg?'<p class="error">'+esc(acceso.msg)+'</p>':'')+
+   '<div><button class="btn" data-act="cf-guardar">Guardar y continuar</button></div>';
+}
+function pantallaLogin(){
+  mostrarApp(false);
+  var crear=acceso.modo==='crear';
+  $('#acceso').innerHTML='<span class="eyebrow">Prospección Inteligente</span><h2>'+(crear?'Crear tu cuenta':'Entrar a tu cuenta')+'</h2>'+
+   '<div class="selector" role="group" aria-label="Tipo de acceso"><button data-act="ac-modo" data-v="entrar" aria-pressed="'+!crear+'">Ya tengo cuenta</button><button data-act="ac-modo" data-v="crear" aria-pressed="'+crear+'">Soy nueva</button></div>'+
+   '<p class="nota">'+(crear?'Crea tu cuenta una sola vez. Después entra siempre con "Ya tengo cuenta".':'Usa el mismo correo y contraseña con que creaste tu cuenta.')+'</p>'+
+   '<label class="campo" for="ac-mail">Correo<input type="email" id="ac-mail" autocomplete="email" inputmode="email"></label>'+
+   '<label class="campo" for="ac-pass">Contraseña<small>'+(crear?'Mínimo 6 caracteres.':'')+'</small><input type="password" id="ac-pass" autocomplete="'+(crear?'new-password':'current-password')+'"></label>'+
+   (acceso.msg?'<p class="error">'+esc(acceso.msg)+'</p>':'')+
+   '<div><button class="btn" data-act="ac-enviar"'+(acceso.cargando?' disabled':'')+'>'+(acceso.cargando?'Un momento…':crear?'Crear mi cuenta':'Entrar')+'</button></div>'+
+   '<button class="btn sec2" data-act="ac-conexion" style="align-self:flex-start;min-height:0;padding:8px 12px;font-size:.85rem">Cambiar conexión</button>';
+}
+async function enviarAcceso(){
+  var mail=$('#ac-mail').value.trim(),pass=$('#ac-pass').value;
+  if(!mail||!pass){acceso.msg='Escribe tu correo y tu contraseña.';pantallaLogin();return}
+  acceso.cargando=true;acceso.msg='';pantallaLogin();$('#ac-mail').value=mail;
+  try{
+    var r=acceso.modo==='crear'?await SB.auth.signUp({email:mail,password:pass}):await SB.auth.signInWithPassword({email:mail,password:pass});
+    if(r.error)throw r.error;
+    if(acceso.modo==='crear'&&!r.data.session){acceso.cargando=false;acceso.modo='entrar';acceso.msg='Cuenta creada. Revisa tu correo para confirmarla y luego entra con "Ya tengo cuenta".';pantallaLogin();return}
+    acceso.cargando=false;await iniciarSesion(r.data.session);
+  }catch(e){
+    acceso.cargando=false;
+    var m=String(e&&e.message||'');
+    acceso.msg=/Invalid login/i.test(m)?'Correo o contraseña incorrectos. Si nunca creaste cuenta, elige "Soy nueva".'
+      :/already registered/i.test(m)?'Ese correo ya tiene cuenta. Elige "Ya tengo cuenta".'
+      :/Password should be/i.test(m)?'La contraseña debe tener al menos 6 caracteres.'
+      :/Email not confirmed/i.test(m)?'Falta confirmar tu correo. Revisa tu bandeja de entrada.'
+      :'No se pudo entrar: '+m;
+    pantallaLogin();
+  }
+}
+async function iniciarSesion(sesion){
+  UID=sesion.user.id;
+  Store.leerLocal();mostrarApp(true);pintaEstado();render();
+  try{await Store.cargar();Store.error=false}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
+  pintaEstado();render();
+}
+async function arrancar(){
+  if(!window.supabase){mostrarApp(false);$('#acceso').innerHTML='<h2>Sin conexión</h2><p class="nota">No se pudo cargar la app. Revisa tu internet y vuelve a abrirla.</p>';return}
+  if(!CFG.sbUrl||!CFG.sbKey){pantallaConexion();return}
+  try{SB=window.supabase.createClient(CFG.sbUrl,CFG.sbKey)}catch(e){acceso.msg='La dirección o la clave de Supabase no son válidas.';pantallaConexion();return}
+  var s=await SB.auth.getSession();
+  if(s.data&&s.data.session)await iniciarSesion(s.data.session);else pantallaLogin();
+}
+async function cerrarSesion(){try{await SB.auth.signOut()}catch(e){}UID=null;S.pros={};acceso.modo='entrar';acceso.msg='';pantallaLogin()}
+
+/* ---------- Búsqueda automática (puente) ---------- */
+var BUS={cantidad:10,canal:'',cargando:false,resultados:null,resumen:null,error:''};
+function canalesAuto(){return ['instagram','linkedin','google']}
+function textosPara(canal){
+  var pl=S.meta.plan,p=S.meta.perfil;
+  var t=pl?pl.busquedas.filter(function(b){return b.canal===canal}).map(function(b){return b.texto}):[];
+  if(!t.length)t=p.palabras.split(/[,;\n]/).map(function(s){return (s.trim()+' '+p.lugar).trim()}).filter(Boolean);
+  return t.slice(0,5);
+}
+function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
+async function buscarAuto(){
+  if(!CFG.puente||!CFG.codigo){toast('Falta configurar el puente. Ve a Perfil → Conexión.');return}
+  var canal=BUS.canal||((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||'instagram');
+  var textos=textosPara(canal);
+  if(!textos.length){toast('Primero completa tu cliente ideal en Perfil.');return}
+  BUS.canal=canal;BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
+  try{
+    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:{'content-type':'application/json','x-codigo':CFG.codigo},
+      body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,filtro:canal==='instagram'?{minSeguidores:100,maxSeguidores:5000}:null})});
+    var d=await r.json().catch(function(){return {}});
+    if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
+    BUS.resultados=d.resultados||[];BUS.resumen=d.resumen||null;
+  }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión mientras buscaba. Inténtalo de nuevo.':String(e.message)}
+  BUS.cargando=false;render();
+}
+function agregarResultado(i){
+  var r=BUS.resultados&&BUS.resultados[i];if(!r||yaEsta(r))return null;
+  var extra=r.seguidores!=null?(' · '+r.seguidores+' seguidores, '+r.publicaciones+' publicaciones'):'';
+  var np=normal({id:nuevoId(),nombre:(r.nombre||r.usuario||'Sin nombre').slice(0,80),canal:CANALES[r.canal]?r.canal:'otro',link:r.perfil||'',perfil:r.perfil||'',
+    notas:(r.usuario?'@'+r.usuario+extra+'\n':'')+(r.bio||''),origen:'radar'});
+  if(np.canal==='google')np.canal='otro';
+  S.pros[np.id]=np;Store.pro(np);return np;
+}
+function vBusqueda(){
+  var opc=canalesAuto().map(function(c){return '<option value="'+c+'"'+(BUS.canal===c?' selected':'')+'>'+CANALES[c]+'</option>'}).join('');
+  var h='<section class="sec"><h3>Búsqueda automática</h3><p class="nota">La app busca por ti y te trae perfiles listos para revisar. Usa tu crédito de Apify.</p>'+
+   '<div class="panel">'+
+   '<div class="fila"><label class="campo" for="bus-canal" style="flex:1 1 140px">Dónde<select id="bus-canal" data-bus="canal">'+opc+'</select></label>'+
+   '<label class="campo" for="bus-cant" style="flex:1 1 120px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
+   '<p class="costo">Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
+   '<div><button class="btn" data-act="bus-ir"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Buscar prospectos')+'</button></div>'+
+   (BUS.error?'<p class="error">'+esc(BUS.error)+'</p>':'')+'</div></section>';
+  if(BUS.resultados){
+    var R=BUS.resultados;
+    h+='<section class="sec"><h3>'+R.length+' encontrados en '+CANALES[BUS.canal]+'</h3>'+
+      (BUS.resumen&&BUS.resumen.descartados?'<p class="nota">Se revisaron '+BUS.resumen.encontrados+' perfiles y se descartaron '+BUS.resumen.descartados.length+' (organizaciones o cuentas muy grandes).</p>':'')+
+      (R.length?'<div><button class="btn suave" data-act="bus-todos">Agregar todos a mi lista</button></div>':'<p class="nota">Esta vez no apareció nadie que calce. Prueba otro canal o cambia las búsquedas en tu perfil.</p>')+
+      '<div class="lista">'+R.map(function(r,i){var esta=yaEsta(r);
+        return '<div class="panel res"><b>'+esc(r.nombre||r.usuario)+'</b><div class="acc">'+(esta?'<span class="chip">En tu lista</span>':'<button class="btn" data-act="bus-uno" data-v="'+i+'">Agregar</button>')+'</div>'+
+          '<span class="sub">'+(r.usuario?'@'+esc(r.usuario)+' · ':'')+(r.seguidores!=null?esc(r.seguidores)+' seguidores':'')+'</span>'+
+          '<span class="sub">'+esc(String(r.bio||'').slice(0,220))+'</span>'+
+          (r.perfil?'<div class="links" style="grid-column:1 / -1"><a href="'+esc(r.perfil)+'" target="_blank" rel="noopener">Ver perfil</a></div>':'')+'</div>'}).join('')+'</div></section>';
+  }
+  return h;
+}
+function normal(p){
+  return Object.assign({nombre:'',canal:'otro',link:'',perfil:'',buscar:'',notas:'',n:0,a:0,c:0,calificado:false,motivo:'',mensaje:'',estado:'nuevo',
+    creado:hoy(),contactadaEn:'',respondioEn:'',clienteEn:'',proximoSeg:'',ultimoEnvio:'',seguimientos:0,origen:'manual'},p);
+}
+
+/* ---------- Cálculos ---------- */
+function lista(){return Object.keys(S.pros).map(function(k){return S.pros[k]})}
+function pts(p){return p.calificado?Math.round((Number(p.n)+Number(p.a)+Number(p.c))/15*100):-1}
+function temp(p){var v=pts(p);return v<0?'sin':v>=70?'cal':v>=45?'tib':'fri'}
+var TEMP={cal:'Caliente',tib:'Tibia',fri:'Fría',sin:'Sin calificar'};
+function insignia(p){var v=pts(p);return '<span class="pt '+temp(p)+'">'+(v<0?'Sin puntaje':v+' pts')+'</span>'}
+function pct(a,b){return b?Math.round(a/b*100)+'%':'—'}
+
+/* ---------- Radar ---------- */
+function contexto(){var p=S.meta.perfil;
+  return 'NEGOCIO\nQué vende: '+p.oferta+'\nA quién ayuda: '+p.cliente+'\nProblema que resuelve: '+p.problema+
+  '\nPalabras con que su cliente se describe: '+p.palabras+'\nLugar: '+p.lugar+'\nPrecio aproximado: '+(p.precio||'sin definir')+
+  '\n¿Ya contactó a sus conocidos por WhatsApp?: '+(p.baseLista?'sí, a casi todos':'todavía no');}
+var SENALES_BASE={necesidad:['Habla del problema que tú resuelves','Pregunta o pide ayuda sobre el tema','Se nota que lo está intentando sola','Su situación calza con a quién ayudas'],
+  afinidad:['Usa palabras parecidas a las tuyas','Comparte un estilo o valores cercanos','Está en tu país o habla tu idioma','Tienen conocidos o intereses en común'],
+  capacidad:['Ya invierte en formarse o en su negocio','Tiene trabajo o negocio activo','Ya paga por servicios parecidos','Puede decidir la compra por sí misma']};
+function planBasico(){
+  var p=S.meta.perfil,t=(p.cliente+' '+p.palabras+' '+p.oferta).toLowerCase();
+  var empresa=/jef|gerent|empresa|l[ií]der|ejecutiv|equipo|rrhh|recursos humanos|corporativ|director/.test(t);
+  var visible=/coach|terapeut|psic[oó]log|nutri|emprended|mentor|consultor|instructor|profesor|due[ñn]|marca personal|freelanc|dise[ñn]ador|fot[oó]graf/.test(t);
+  var tipo=(empresa||visible)?'personas':'lugares',canales=[];
+  if(!p.baseLista)canales.push({canal:'whatsapp',porque:'Tus conocidos son la fuente más rápida para empezar: ya confían en ti.'});
+  if(empresa)canales.push({canal:'linkedin',porque:'Tu cliente trabaja en empresas y ahí muestra su cargo.'});
+  if(visible||!empresa)canales.push({canal:'instagram',porque:tipo==='personas'?'Tu cliente muestra su trabajo en su propio perfil.':'Ahí están las cuentas que tu cliente ya sigue.'});
+  if(tipo==='lugares')canales.push({canal:'facebook',porque:'En los grupos tu cliente pregunta y pide ayuda.'});
+  var pal=p.palabras.split(/[,;\n]/).map(function(s){return s.trim()}).filter(Boolean).slice(0,3);
+  if(!pal.length)pal=[p.cliente.split(/[,.]/)[0].trim()];
+  var bus=[];
+  canales.forEach(function(c){
+    if(c.canal==='whatsapp'){bus.push({canal:'whatsapp',texto:'Revisa tus contactos y anota a quienes calzan o conocen a alguien que calce',busca:'personas',para:'Personas que ya te conocen'});return}
+    pal.forEach(function(w){bus.push({canal:c.canal,texto:(w+' '+p.lugar).trim(),busca:tipo,para:tipo==='personas'?'Perfiles que se presentan así':'Grupos y cuentas donde se reúnen'})});
+  });
+  return {resumen:tipo==='personas'?'Tu cliente se muestra en público: buscamos personas.':'Tu cliente no se muestra en público: buscamos los lugares donde ya se reúne.',
+    tipo:tipo,canales:canales,busquedas:bus,senales:clon(SENALES_BASE),creado:hoy(),conIA:false};
+}
+function limpiaPlan(r){
+  var b=planBasico();if(!r||typeof r!=='object')return b;
+  function ok(c){return CANALES[c]&&c!=='otro'?c:'google'}
+  function txt(a,max){return Array.isArray(a)?a.map(function(x){return String(x).slice(0,160)}).filter(Boolean).slice(0,max):[]}
+  var can=Array.isArray(r.canales)?r.canales.slice(0,4).map(function(c){return {canal:ok(String(c.canal||'').toLowerCase()),porque:String(c.porque||'').slice(0,220)}}):[];
+  var bus=Array.isArray(r.busquedas)?r.busquedas.slice(0,10).map(function(x){return {canal:ok(String(x.canal||'').toLowerCase()),texto:String(x.texto||'').slice(0,160),busca:x.busca==='lugares'?'lugares':'personas',para:String(x.para||'').slice(0,160)}}).filter(function(x){return x.texto}):[];
+  var s=r.senales||{};
+  var sen={necesidad:txt(s.necesidad,5),afinidad:txt(s.afinidad,5),capacidad:txt(s.capacidad,5)};
+  return {resumen:String(r.resumen||b.resumen).slice(0,260),tipo:r.tipo==='lugares'?'lugares':'personas',
+    canales:can.length?can:b.canales,busquedas:bus.length?bus:b.busquedas,
+    senales:{necesidad:sen.necesidad.length?sen.necesidad:b.senales.necesidad,afinidad:sen.afinidad.length?sen.afinidad:b.senales.afinidad,capacidad:sen.capacidad.length?sen.capacidad:b.senales.capacidad},
+    creado:hoy(),conIA:true};
+}
+function enlaces(b){
+  var q=encodeURIComponent(b.texto),g='https://www.google.com/search?q=';
+  if(b.canal==='instagram')return [['Buscar en Google',g+encodeURIComponent('site:instagram.com '+b.texto)],['Buscar en Instagram','https://www.instagram.com/explore/search/keyword/?q='+q]];
+  if(b.canal==='linkedin')return [['Buscar en LinkedIn','https://www.linkedin.com/search/results/'+(b.busca==='lugares'?'groups':'people')+'/?keywords='+q],['Buscar en Google',g+encodeURIComponent('site:linkedin.com/in '+b.texto)]];
+  if(b.canal==='facebook')return [['Buscar grupos','https://www.facebook.com/search/groups/?q='+q],['Buscar páginas','https://www.facebook.com/search/pages/?q='+q]];
+  if(b.canal==='whatsapp')return [];
+  return [['Buscar en Google',g+q]];
+}
+
+/* ---------- IA ---------- */
+var REGLAS_MSJ='Reglas del mensaje: máximo 3 líneas cortas. Parte de algo concreto y real que aparece en las notas. No vende, no ofrece nada, no lleva enlaces. Termina con una sola pregunta fácil de responder. Suena a una persona real, cálida y directa, en el español del lugar indicado. No inventes datos que no estén en las notas. Sin tecnicismos.';
+function avisoIA(e){
+  var c=e&&e.code;
+  if(c==='cancelled')return;
+  if(c==='not_granted'||c==='sampling_disabled'||c==='not_declared'||c==='capability_disabled'||c==='capability_removed'){IA=null;toast('La ayuda con IA no está disponible aquí. Puedes seguir a mano.');return}
+  if(c==='rate_limited'){toast('Se alcanzó el límite por ahora. Prueba más tarde.');return}
+  if(c==='session_expired'){toast('Tu sesión venció. Vuelve a entrar e inténtalo.');return}
+  toast('No resultó esta vez. Inténtalo de nuevo.');
+}
+async function crearPlan(){
+  var p=S.meta.perfil;
+  if(!p.cliente.trim()||!p.oferta.trim()){toast('Completa qué vendes y a quién ayudas.');return}
+  if(!IA){S.meta.plan=planBasico();S.meta.hechas={};Store.meta();S.tab='encontrar';render();return}
+  ocupada='plan';render();
+  try{
+    var r=await IA.json('Eres estratega de prospección para emprendedoras que recién validan su oferta y todavía no tienen audiencia. Con los datos de abajo decide dónde está su cliente ideal y cómo encontrarlo. Nunca propongas automatizar envíos.\n'+
+     'Reglas: si aún no contactó a sus conocidos, whatsapp va primero. Si su cliente tiene perfil profesional público (coach, terapeuta, jefatura, dueña de negocio), busca PERSONAS. Si su cliente es una persona privada, busca LUGARES donde ya se reúne (grupos, cuentas, comunidades). '+
+     'Canales permitidos: whatsapp, instagram, linkedin, facebook, google. Ordena los canales del mejor al peor, máximo 3. '+
+     'Cada búsqueda es una frase corta, tal como se escribe en un buscador, con palabras que el cliente usa para describirse, más el lugar cuando ayude. Entre 6 y 8 búsquedas. '+
+     'Las señales son cosas que se ven desde afuera en un perfil o publicación, 4 por grupo. Lenguaje simple, sin tecnicismos, en español.\n\n'+contexto()+
+     '\n\nResponde solo con JSON de esta forma: {"resumen":"una frase","tipo":"personas","canales":[{"canal":"instagram","porque":"una frase"}],"busquedas":[{"canal":"instagram","texto":"coach de vida Chile","busca":"personas","para":"qué se encuentra"}],"senales":{"necesidad":["..."],"afinidad":["..."],"capacidad":["..."]}}',{cache:false});
+    S.meta.plan=limpiaPlan(r);
+  }catch(e){avisoIA(e);if(!S.meta.plan)S.meta.plan=planBasico()}
+  S.meta.hechas={};ocupada='';Store.meta();S.tab='encontrar';render();
+}
+function datosPro(p){return 'PROSPECTO\nNombre: '+p.nombre+'\nCanal: '+CANALES[p.canal]+'\nNotas (lo que se ve de esta persona): '+(p.notas||'sin notas')}
+async function calificarIA(p){
+  if(!IA)return;
+  if(!p.notas.trim()){toast('Pega primero su bio o lo que viste de ella.');return}
+  var sen=(S.meta.plan&&S.meta.plan.senales)||SENALES_BASE;
+  ocupada='cal';pintaHoja();
+  try{
+    var r=await IA.json('Califica a este prospecto para el negocio descrito. Puntúa de 0 a 5 cada grupo usando SOLO lo que aparece en las notas. Si falta información, puntúa bajo y dilo en el motivo.\n\n'+contexto()+
+     '\n\nSEÑALES\nNecesidad: '+sen.necesidad.join('; ')+'\nAfinidad: '+sen.afinidad.join('; ')+'\nCapacidad de compra: '+sen.capacidad.join('; ')+
+     '\n\n'+datosPro(p)+'\n\nEscribe también el primer mensaje para iniciar la conversación. '+REGLAS_MSJ+
+     '\n\nResponde solo con JSON: {"n":3,"a":4,"c":2,"motivo":"máximo dos frases simples","mensaje":"..."}',{cache:false});
+    DIMS.forEach(function(d){var v=Math.round(Number(r[d[0]]));p[d[0]]=isFinite(v)?Math.max(0,Math.min(5,v)):0});
+    p.motivo=String(r.motivo||'').slice(0,400);
+    if(r.mensaje&&!p.contactadaEn)p.mensaje=String(r.mensaje).slice(0,1200);
+    p.calificado=true;if(p.estado==='nuevo')p.estado='listo';
+    Store.pro(p);
+  }catch(e){avisoIA(e)}
+  ocupada='';pintaHoja();render();
+}
+async function mensajeIA(p){
+  if(!IA)return;
+  var seg=p.estado==='contactada';
+  ocupada='msj';pintaHoja();
+  try{
+    var r=await IA((seg?'Escribe un mensaje de seguimiento para alguien que no respondió el primer mensaje. Es breve, amable, sin reproche y sin presión; deja la puerta abierta. Primer mensaje enviado: "'+(p.mensaje||'')+'".':'Escribe el primer mensaje para iniciar una conversación con este prospecto.')+
+     ' '+REGLAS_MSJ+'\n\n'+contexto()+'\n\n'+datosPro(p)+'\n\nResponde solo con el texto del mensaje, sin comillas ni explicación.',{cache:false});
+    p.mensaje=r.text.trim().slice(0,1200);Store.pro(p);
+  }catch(e){avisoIA(e)}
+  ocupada='';pintaHoja();
+}
+function mensajeBase(p){return 'Hola '+(p.nombre.split(' ')[0]||'')+', ¿cómo estás? Vi tu perfil y me llamó la atención [escribe aquí algo real que viste]. ¿Te puedo hacer una pregunta cortita sobre tu trabajo?'}
+
+/* ---------- Vistas ---------- */
+function vacio(t,d,b,act,val){return '<div class="vacio"><h2>'+t+'</h2><p class="nota">'+d+'</p><div><button class="btn" data-act="'+act+'" data-v="'+val+'">'+b+'</button></div></div>'}
+function tarjeta(p,sub){
+  return '<button class="pro" data-act="abrir" data-v="'+esc(p.id)+'"><b>'+esc(p.nombre||'Sin nombre')+'</b>'+insignia(p)+
+    '<span class="sub">'+esc(sub||(CANALES[p.canal]+' · '+nombreEtapa(p.estado)))+'</span></button>';
+}
+function grupo(t,nota,arr,subFn){
+  if(!arr.length)return '';
+  return '<section class="sec"><h3>'+t+'</h3>'+(nota?'<p class="nota">'+nota+'</p>':'')+'<div class="lista">'+arr.map(function(p){return tarjeta(p,subFn?subFn(p):'')}).join('')+'</div></section>';
+}
+function vHoy(){
+  var L=lista(),p=S.meta.perfil;
+  if(!p.cliente.trim())return vacio('Empieza por tu cliente ideal','Cuéntale a la app a quién ayudas. Con eso decide dónde buscar y qué señales mirar.','Definir mi cliente ideal','tab','perfil');
+  if(!S.meta.plan)return vacio('Falta crear tu radar','Ya está tu cliente ideal. Ahora la app decide en qué canal buscarlo.','Ir a mi perfil','tab','perfil');
+  if(!L.length)return vacio('Tu radar está listo','Aún no hay prospectos. Abre una búsqueda, elige a quien calce y agrégala aquí.','Ir a Encontrar','tab','encontrar');
+  var env=L.filter(function(x){return x.ultimoEnvio===hoy()}).length,meta=S.meta.metaDiaria||5,cupo=Math.max(meta-env,0);
+  var resp=L.filter(function(x){return x.estado==='conversacion'||x.estado==='propuesta'});
+  var seg=L.filter(function(x){return x.estado==='contactada'&&x.proximoSeg&&x.proximoSeg<=hoy()});
+  var listos=L.filter(function(x){return x.estado==='listo'}).sort(function(a,b){return pts(b)-pts(a)});
+  var nuevos=L.filter(function(x){return x.estado==='nuevo'});
+  var h='<section class="sec"><span class="eyebrow">Hoy</span><h2>'+env+' de '+meta+' mensajes enviados</h2>'+
+    '<div class="avance" aria-hidden="true"><i style="width:'+Math.min(100,Math.round(env/meta*100))+'%"></i></div>'+
+    (cupo?'':'<p class="nota">Meta de hoy cumplida. Lo que queda puede esperar a mañana.</p>')+'</section>';
+  h+=grupo('Te respondieron','Aquí hay una conversación abierta. Esto va primero.',resp);
+  h+=grupo('Seguimientos de hoy','Les escribiste y aún no responden.',seg,function(x){return CANALES[x.canal]+' · '+(x.seguimientos?x.seguimientos+' seguimiento(s)':'primer seguimiento')});
+  if(cupo)h+=grupo('Para escribir hoy','Las de mayor puntaje primero.',listos.slice(0,cupo),function(x){return CANALES[x.canal]+(x.motivo?' · '+x.motivo:'')});
+  if(nuevos.length)h+='<section class="sec"><h3>Por calificar</h3><p class="nota">'+nuevos.length+' prospecto(s) esperan puntaje.</p><div><button class="btn suave" data-act="filtro" data-v="nuevo">Ver y calificar</button></div></section>';
+  if(!resp.length&&!seg.length&&!listos.length&&!nuevos.length)h+='<section class="sec"><p class="nota">Nada pendiente. Si te queda tiempo, busca prospectos nuevos.</p><div><button class="btn sec2" data-act="tab" data-v="encontrar">Ir a Encontrar</button></div></section>';
+  return h;
+}
+function vEncontrar(){
+  var pl=S.meta.plan;
+  if(!pl)return vacio('Primero, tu cliente ideal','La app necesita saber a quién buscas para decidir dónde buscar.','Definir mi cliente ideal','tab','perfil');
+  var h='<section class="sec"><span class="eyebrow">Encontrar</span><h2>Dónde está tu cliente</h2><p class="nota">'+esc(pl.resumen)+'</p>'+
+    '<div><button class="btn" data-act="nuevo">Agregar prospecto</button></div></section>';
+  h+='<section class="sec"><h3>Canales, del mejor al peor</h3><div class="lista">'+pl.canales.map(function(c,i){
+    return '<div class="panel canal"><span class="n">'+(i+1)+'</span><b>'+CANALES[c.canal]+'</b><span class="nota">'+esc(c.porque)+'</span></div>'}).join('')+'</div></section>';
+  h+=vBusqueda();
+  h+='<section class="sec"><h3>Búsqueda gratis</h3><p class="nota">Sin costo: abre la búsqueda en tu celular, mira quién aparece y agrega solo a quien calce. '+(pl.tipo==='lugares'?'Buscas lugares: entra, observa quién pregunta y agrégala.':'')+'</p><div class="lista">'+
+    pl.busquedas.map(function(b,i){var ls=enlaces(b),hecha=S.meta.hechas[i]===hoy();
+      return '<div class="panel busq"><div class="fila" style="justify-content:space-between;align-items:center"><span class="chip">'+CANALES[b.canal]+'</span>'+(hecha?'<span class="hecha">Revisada hoy</span>':'')+'</div>'+
+        '<span class="txt">'+esc(b.texto)+'</span>'+(b.para?'<span class="nota">'+esc(b.para)+'</span>':'')+
+        (ls.length?'<div class="links">'+ls.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener" data-act="hecha" data-v="'+i+'">'+l[0]+'</a>'}).join('')+'</div>':
+          '<div><button class="btn suave" data-act="nuevo" data-v="whatsapp">Anotar a alguien</button></div>')+'</div>'}).join('')+'</div></section>';
+  h+='<section class="sec"><h3>Señales para reconocer a un buen prospecto</h3>'+DIMS.map(function(d){
+    return '<div class="panel"><b>'+d[2]+'</b><ul class="senales">'+pl.senales[d[1]].map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ul></div>'}).join('')+'</section>';
+  return h;
+}
+function vProspectos(){
+  var L=lista(),f=S.filtro;
+  var h='<section class="sec"><span class="eyebrow">Prospectos</span><h2>'+L.length+' en tu lista</h2><div><button class="btn" data-act="nuevo">Agregar prospecto</button></div></section>';
+  if(!L.length)return h+'<p class="nota">Cuando agregues prospectos aparecerán aquí, ordenados por puntaje.</p>';
+  h+='<div class="filtros">'+[['todos','Todos']].concat(ETAPAS).map(function(e){
+    var n=e[0]==='todos'?L.length:L.filter(function(x){return x.estado===e[0]}).length;
+    return '<button data-act="filtro" data-v="'+e[0]+'" aria-pressed="'+(f===e[0])+'">'+e[1]+' '+n+'</button>'}).join('')+'</div>';
+  var V=L.filter(function(x){return f==='todos'||x.estado===f}).sort(function(a,b){return pts(b)-pts(a)||(a.creado<b.creado?1:-1)});
+  h+=V.length?'<div class="lista">'+V.map(function(p){return tarjeta(p)}).join('')+'</div>':'<p class="nota">No hay prospectos en esta etapa.</p>';
+  return h;
+}
+function vMedir(){
+  var L=lista();
+  var h='<section class="sec"><span class="eyebrow">Medir</span><h2>Qué está funcionando</h2></section>';
+  if(!L.length)return h+'<p class="nota">Aquí verás qué canal y qué tipo de prospecto te trae conversaciones y clientes. Aparece cuando empieces a contactar.</p>';
+  var cal=L.filter(function(x){return x.calificado}).length,con=L.filter(function(x){return x.contactadaEn}),res=con.filter(function(x){return x.respondioEn}),cli=L.filter(function(x){return x.estado==='cliente'}).length;
+  var pasos=[['Encontradas',L.length],['Calificadas',cal],['Contactadas',con.length],['Respondieron',res.length],['Clientes',cli]];
+  h+='<section class="sec"><h3>El camino</h3><div class="panel barras">'+pasos.map(function(s){
+    return '<div class="barra-f"><span>'+s[0]+'</span><b>'+s[1]+'</b><div class="avance" aria-hidden="true"><i style="width:'+Math.round(s[1]/L.length*100)+'%"></i></div></div>'}).join('')+
+    '<p class="nota">De cada 100 contactadas responden '+(con.length?Math.round(res.length/con.length*100):'—')+'.</p></div></section>';
+  function fila(nom,arr){var r=arr.filter(function(x){return x.respondioEn}).length,c=arr.filter(function(x){return x.estado==='cliente'}).length;
+    return '<tr><td>'+nom+'</td><td>'+arr.length+'</td><td>'+r+'</td><td>'+pct(r,arr.length)+'</td><td>'+c+'</td></tr>'}
+  var cab='<tr><th>%NOM%</th><th>Contactadas</th><th>Respondieron</th><th>%</th><th>Clientes</th></tr>';
+  var porCanal=Object.keys(CANALES).map(function(k){return [k,con.filter(function(x){return x.canal===k})]}).filter(function(x){return x[1].length});
+  var porTemp=['cal','tib','fri','sin'].map(function(k){return [k,con.filter(function(x){return temp(x)===k})]}).filter(function(x){return x[1].length});
+  if(con.length){
+    h+='<section class="sec"><h3>Por canal</h3><div class="panel tabla"><table>'+cab.replace('%NOM%','Canal')+porCanal.map(function(x){return fila(CANALES[x[0]],x[1])}).join('')+'</table></div></section>';
+    h+='<section class="sec"><h3>Por puntaje</h3><div class="panel tabla"><table>'+cab.replace('%NOM%','Tipo')+porTemp.map(function(x){return fila(TEMP[x[0]],x[1])}).join('')+'</table></div></section>';
+  }
+  var ideas=[];
+  if(con.length<10)ideas.push('Aún es pronto para sacar conclusiones. Con 10 contactadas ya se empieza a ver un patrón (llevas '+con.length+').');
+  else{
+    var mejor=porCanal.filter(function(x){return x[1].length>=3}).sort(function(a,b){return b[1].filter(function(y){return y.respondioEn}).length/b[1].length-a[1].filter(function(y){return y.respondioEn}).length/a[1].length})[0];
+    if(mejor)ideas.push('Tu mejor canal hasta ahora es '+CANALES[mejor[0]]+'. Pon ahí la mayor parte de tu tiempo.');
+    var c=con.filter(function(x){return temp(x)==='cal'}),f=con.filter(function(x){return temp(x)==='fri'});
+    if(c.length>=3&&f.length>=3){var rc=c.filter(function(x){return x.respondioEn}).length/c.length,rf=f.filter(function(x){return x.respondioEn}).length/f.length;
+      ideas.push(rc>rf?'Las de puntaje alto responden más. El puntaje está acertando: prioriza esas.':'Las de puntaje alto no están respondiendo más que las frías. Conviene revisar tus señales en el perfil.')}
+    if(res.length/con.length<0.15)ideas.push('Responden pocas. Antes de buscar más gente, prueba otro primer mensaje.');
+  }
+  h+='<section class="sec"><h3>Lo que dicen tus números</h3><div class="panel">'+ideas.map(function(i){return '<p>'+i+'</p>'}).join('')+'</div></section>';
+  return h;
+}
+function campo(k,et,ayuda,area){var v=S.meta.perfil[k];
+  return '<label class="campo" for="pf-'+k+'">'+et+(ayuda?'<small>'+ayuda+'</small>':'')+(area?'<textarea id="pf-'+k+'" data-f="'+k+'">'+esc(v)+'</textarea>':'<input type="text" id="pf-'+k+'" data-f="'+k+'" value="'+esc(v)+'">')+'</label>'}
+function vPerfil(){
+  var p=S.meta.perfil,pl=S.meta.plan;
+  return '<section class="sec"><span class="eyebrow">Perfil</span><h2>Tu cliente ideal</h2><p class="nota">Con esto la app decide en qué canal buscar y qué señales mirar.</p></section>'+
+   '<section class="sec">'+
+   campo('oferta','¿Qué vendes?','Tu servicio, en una frase.',true)+
+   campo('cliente','¿A quién ayudas?','Describe a la persona: quién es y en qué momento está.',true)+
+   campo('problema','¿Qué problema le resuelves?','Como lo diría ella.',true)+
+   campo('palabras','¿Con qué palabras se presenta tu cliente?','Lo que pondría en su bio. Sepáralas con comas.')+
+   campo('lugar','¿Dónde está?','País o ciudad.')+
+   campo('precio','Precio aproximado de tu servicio','Opcional. Ayuda a medir la capacidad de compra.')+
+   '<label class="check" for="pf-base"><input type="checkbox" id="pf-base" data-f="baseLista"'+(p.baseLista?' checked':'')+'><span>Ya contacté a casi todos mis conocidos por WhatsApp</span></label>'+
+   '<label class="campo" for="pf-meta">Mensajes por día<small>Tu tope diario. Pocos y bien elegidos.</small><input type="number" id="pf-meta" data-meta="1" min="1" max="30" inputmode="numeric" value="'+esc(S.meta.metaDiaria)+'"></label>'+
+   '<div><button class="btn" data-act="plan"'+(ocupada==='plan'?' disabled':'')+'>'+(ocupada==='plan'?'Pensando…':pl?'Actualizar mi radar':'Crear mi radar')+'</button></div>'+
+   (pl?'<p class="nota">Radar creado el '+esc(pl.creado)+'. Actualízalo si cambias tu cliente ideal.</p>':'')+
+   '</section><section class="sec"><h3>Cuenta y conexión</h3><div class="panel">'+
+   '<p class="nota">Puente de búsqueda: '+(CFG.codigo?'configurado':'falta el código de acceso')+'.</p>'+
+   '<div class="fila"><button class="btn sec2" data-act="ac-conexion">Cambiar conexión</button><button class="btn sec2" data-act="salir">Cerrar sesión</button></div>'+
+   '<label class="campo" for="importar">Importar datos<small>Para traer prospectos desde un archivo de respaldo (.json).</small><input type="file" id="importar" accept=".json,application/json"></label>'+
+   '</div>'+
+   '</section>';
+}
+var ICONOS={hoy:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',encontrar:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  prospectos:'<circle cx="9" cy="9" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5M16 6.5a3 3 0 010 5.5M18 14.5c1.6.8 2.6 2.300 3 4.500"/>',
+  medir:'<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',perfil:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>'};
+var TABS=[['hoy','Hoy'],['encontrar','Encontrar'],['prospectos','Prospectos'],['medir','Medir'],['perfil','Perfil']];
+function render(){
+  pendiente=false;
+  var v={hoy:vHoy,encontrar:vEncontrar,prospectos:vProspectos,medir:vMedir,perfil:vPerfil}[S.tab]();
+  $('#view').innerHTML=v;
+  $('#tabs').innerHTML=TABS.map(function(t){return '<button data-act="tab" data-v="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'><svg viewBox="0 0 24 24" aria-hidden="true">'+ICONOS[t[0]]+'</svg>'+t[1]+'</button>'}).join('');
+}
+function refrescar(){var a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){pendiente=true;return}render()}
+
+/* ---------- Ficha ---------- */
+function pintaHoja(){
+  var el=$('#hoja');
+  if(!hoja){el.hidden=true;el.innerHTML='';return}
+  el.hidden=false;
+  if(hoja.tipo==='nuevo'){var d=hoja.d;
+    el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap">'+
+     '<section class="sec"><h2>Nuevo prospecto</h2>'+
+     '<label class="campo" for="nv-nombre">Nombre<input type="text" id="nv-nombre" data-nf="nombre" value="'+esc(d.nombre)+'"></label>'+
+     '<label class="campo" for="nv-canal">¿Dónde la encontraste?<select id="nv-canal" data-nf="canal">'+Object.keys(CANALES).map(function(k){return '<option value="'+k+'"'+(d.canal===k?' selected':'')+'>'+CANALES[k]+'</option>'}).join('')+'</select></label>'+
+     '<label class="campo" for="nv-link">Enlace a su perfil<small>Opcional.</small><input type="url" id="nv-link" data-nf="link" inputmode="url" value="'+esc(d.link)+'"></label>'+
+     '<label class="campo" for="nv-notas">Lo que viste de ella<small>Pega su bio, una publicación o lo que te llamó la atención.</small><textarea id="nv-notas" data-nf="notas">'+esc(d.notas)+'</textarea></label>'+
+     '<div class="fila">'+(IA?'<button class="btn" data-act="guardar" data-v="ia">Guardar y calificar</button>':'')+'<button class="btn '+(IA?'sec2':'')+'" data-act="guardar">Guardar</button></div></section></div>';
+    return;
+  }
+  var p=S.pros[hoja.id];if(!p){hoja=null;el.hidden=true;return}
+  var sen=(S.meta.plan&&S.meta.plan.senales)||SENALES_BASE,e=p.estado;
+  var acciones='';
+  if(e==='nuevo'||e==='listo')acciones='<button class="btn" data-act="etapa" data-v="enviada">Ya le escribí</button>';
+  else if(e==='contactada')acciones='<button class="btn" data-act="etapa" data-v="respondio">Me respondió</button><button class="btn sec2" data-act="etapa" data-v="seguimiento">Envié seguimiento</button>';
+  else if(e==='conversacion')acciones='<button class="btn" data-act="etapa" data-v="propuesta">Hice mi propuesta</button><button class="btn sec2" data-act="etapa" data-v="cliente">Compró</button>';
+  else if(e==='propuesta')acciones='<button class="btn" data-act="etapa" data-v="cliente">Compró</button>';
+  var avisoSeg=e==='contactada'?'<p class="nota">'+(p.seguimientos>=2?'Ya van '+p.seguimientos+' seguimientos sin respuesta. Puedes soltarla sin culpa.':'Próximo seguimiento: '+esc(p.proximoSeg||'sin fecha')+'.')+'</p>':'';
+  el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button>'+insignia(p)+'</div><div class="wrap">'+
+   '<section class="sec"><h2>'+esc(p.nombre||'Sin nombre')+'</h2><div class="fila" style="align-items:center"><span class="chip">'+CANALES[p.canal]+'</span><span class="chip">'+nombreEtapa(e)+'</span>'+(p.origen==='radar'?'<span class="chip">Encontrada por el radar</span>':'')+'</div>'+
+     linksPerfil(p)+
+     '<label class="campo" for="fp-perfil">Enlace a su '+CANALES[p.canal]+'<small>Cuando la encuentres, pégalo aquí y queda guardado.</small><input type="url" id="fp-perfil" data-pf="perfil" inputmode="url" value="'+esc(p.perfil)+'"></label>'+
+     '<label class="campo" for="fp-notas">Lo que viste de ella<textarea id="fp-notas" data-pf="notas">'+esc(p.notas)+'</textarea></label></section>'+
+   '<section class="sec"><h3>Calificar</h3>'+
+     (IA?'<div><button class="btn suave" data-act="ia-cal"'+(ocupada?' disabled':'')+'>'+(ocupada==='cal'?'Pensando…':p.calificado?'Volver a calificar con IA':'Calificar con IA')+'</button></div>':'')+
+     (p.motivo?'<p class="nota">'+esc(p.motivo)+'</p>':'')+
+     DIMS.map(function(d){return '<div class="dim"><div class="cab"><span>'+d[2]+'</span><span>'+(p.calificado?p[d[0]]:'–')+' / 5</span></div>'+
+       '<p class="nota">'+esc(sen[d[1]].join(' · '))+'</p><div class="escala" role="group" aria-label="'+d[2]+'">'+[0,1,2,3,4,5].map(function(n){
+         return '<button data-act="punto" data-d="'+d[0]+'" data-v="'+n+'" aria-pressed="'+(p.calificado&&Number(p[d[0]])===n)+'">'+n+'</button>'}).join('')+'</div></div>'}).join('')+'</section>'+
+   '<section class="sec"><h3>'+(e==='contactada'?'Mensaje de seguimiento':'Mensaje')+'</h3><p class="nota">La app lo prepara. Tú lo revisas y lo envías desde '+CANALES[p.canal]+'.</p>'+
+     '<label class="campo" for="fp-mensaje"><span hidden>Mensaje</span><textarea id="fp-mensaje" data-pf="mensaje" style="min-height:130px">'+esc(p.mensaje||mensajeBase(p))+'</textarea></label>'+
+     '<div class="fila"><button class="btn" data-act="copiar">Copiar mensaje</button>'+(IA?'<button class="btn sec2" data-act="ia-msj"'+(ocupada?' disabled':'')+'>'+(ocupada==='msj'?'Pensando…':'Escribir con IA')+'</button>':'')+'</div></section>'+
+   '<section class="sec"><h3>¿Qué pasó?</h3>'+avisoSeg+(acciones?'<div class="fila">'+acciones+'</div>':'')+
+     '<label class="campo" for="fp-estado">Cambiar etapa a mano<select id="fp-estado" data-pf="estado">'+ETAPAS.map(function(x){return '<option value="'+x[0]+'"'+(e===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></label>'+
+     '<div class="fila">'+(e!=='descartada'&&e!=='cliente'?'<button class="btn peligro" data-act="etapa" data-v="descartar">Descartar</button>':'')+
+     '<button class="btn peligro" data-act="borrar">'+(borrarListo?'Toca otra vez para borrar':'Borrar prospecto')+'</button></div></section></div>';
+}
+function linksPerfil(p){
+  var dom={instagram:'instagram.com',linkedin:'linkedin.com',facebook:'facebook.com'}[p.canal],ok=/^https?:\/\//i;
+  var perfil=ok.test(p.perfil)?p.perfil:(dom&&ok.test(p.link)&&p.link.indexOf(dom)>-1?p.link:''),L=[];
+  if(perfil)L.push(['Abrir su '+CANALES[p.canal],perfil]);
+  else if(dom){var q=encodeURIComponent((p.buscar||p.nombre).replace(/[()]/g,' ').replace(/\s+/g,' ').trim());
+    if(p.canal==='linkedin')L.push(['Buscarla en LinkedIn','https://www.linkedin.com/search/results/people/?keywords='+q]);
+    else if(p.canal==='facebook')L.push(['Buscarla en Facebook','https://www.facebook.com/search/people/?q='+q]);
+    else L.push(['Buscar su Instagram','https://www.google.com/search?q='+encodeURIComponent('site:instagram.com ')+q]);}
+  if(ok.test(p.link)&&p.link!==perfil)L.push(['Ver dónde la encontré',p.link]);
+  return L.length?'<div class="links">'+L.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener">'+l[0]+'</a>'}).join('')+'</div>':'';
+}
+function mover(p,a){
+  var h=hoy();
+  if(a==='enviada'){p.estado='contactada';p.contactadaEn=p.contactadaEn||h;p.ultimoEnvio=h;p.proximoSeg=enDias(3);if(!p.mensaje){var t=$('#fp-mensaje');if(t)p.mensaje=t.value}}
+  else if(a==='seguimiento'){p.seguimientos=(p.seguimientos||0)+1;p.ultimoEnvio=h;p.proximoSeg=enDias(4)}
+  else if(a==='respondio'){p.estado='conversacion';p.respondioEn=p.respondioEn||h;p.proximoSeg=''}
+  else if(a==='propuesta'){p.estado='propuesta'}
+  else if(a==='cliente'){p.estado='cliente';p.clienteEn=h;p.respondioEn=p.respondioEn||h;p.contactadaEn=p.contactadaEn||h}
+  else if(a==='descartar'){p.estado='descartada';p.proximoSeg=''}
+  Store.pro(p);
+}
+var tRel=0;
+function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tRel);tRel=setTimeout(function(){t.hidden=true},3200)}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act]');if(!b)return;
+  var a=b.dataset.act,v=b.dataset.v,p=hoja&&hoja.id?S.pros[hoja.id]:null;
+  if(a!=='borrar')borrarListo=false;
+  if(a==='cf-guardar'){
+    var c={sbUrl:$('#cf-url').value.trim().replace(/\/$/,''),sbKey:$('#cf-key').value.trim(),puente:$('#cf-puente').value.trim().replace(/\/$/,''),codigo:$('#cf-codigo').value.trim()};
+    if(!/^https:\/\/.+/.test(c.sbUrl)||c.sbKey.length<20){acceso.msg='Revisa la dirección del proyecto y la clave pública de Supabase.';CFG=Object.assign(CFG,c);pantallaConexion();return}
+    CFG=c;guardarCfg(c);acceso.msg='';SB=null;arrancar();return}
+  if(a==='ac-modo'){acceso.modo=v;acceso.msg='';pantallaLogin();return}
+  if(a==='ac-enviar'){enviarAcceso();return}
+  if(a==='ac-conexion'){acceso.msg='';pantallaConexion();return}
+  if(a==='salir'){cerrarSesion();return}
+  if(a==='bus-ir'){buscarAuto();return}
+  if(a==='bus-uno'){if(agregarResultado(Number(v)))toast('Agregada a tu lista. Ponle puntaje en Prospectos.');render();return}
+  if(a==='bus-todos'){var n=0;(BUS.resultados||[]).forEach(function(r,i){if(agregarResultado(i))n++});toast(n?n+' agregadas a tu lista.':'Ya estaban todas en tu lista.');render();return}
+  if(a==='tab'){S.tab=v;render();window.scrollTo(0,0)}
+  else if(a==='filtro'){S.filtro=v;S.tab='prospectos';render()}
+  else if(a==='plan'){crearPlan()}
+  else if(a==='hecha'){S.meta.hechas[v]=hoy();Store.meta();setTimeout(render,400)}
+  else if(a==='nuevo'){var pl=S.meta.plan;hoja={tipo:'nuevo',d:{nombre:'',canal:v||(pl&&pl.canales[0]?pl.canales[0].canal:'instagram'),link:'',notas:''}};pintaHoja();$('#hoja').scrollTop=0}
+  else if(a==='abrir'){hoja={tipo:'pro',id:v};pintaHoja();$('#hoja').scrollTop=0}
+  else if(a==='cerrar'){hoja=null;pintaHoja();render()}
+  else if(a==='guardar'){var d=hoja.d;if(!d.nombre.trim()){toast('Ponle un nombre para reconocerla.');return}
+    var np=normal({id:nuevoId(),nombre:d.nombre.trim(),canal:d.canal,link:d.link.trim(),notas:d.notas.trim()});
+    S.pros[np.id]=np;Store.pro(np);hoja={tipo:'pro',id:np.id};pintaHoja();render();$('#hoja').scrollTop=0;
+    if(v==='ia')calificarIA(np);else toast('Guardada. Ahora ponle puntaje.')}
+  else if(!p){return}
+  else if(a==='punto'){if(!p.calificado){p.n=p.n||0;p.a=p.a||0;p.c=p.c||0}p[b.dataset.d]=Number(v);p.calificado=true;if(p.estado==='nuevo')p.estado='listo';Store.pro(p);pintaHoja()}
+  else if(a==='ia-cal'){calificarIA(p)}
+  else if(a==='ia-msj'){mensajeIA(p)}
+  else if(a==='copiar'){var t=$('#fp-mensaje'),txt=t.value;
+    var falla=function(){t.focus();t.select();toast('Selecciónalo y cópialo a mano.')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Mensaje copiado. Pégalo en '+CANALES[p.canal]+'.')},falla);else falla()}
+  else if(a==='etapa'){mover(p,v);pintaHoja();toast(v==='enviada'?'Anotado. Te aviso en 3 días si no responde.':v==='cliente'?'¡Nueva clienta!':'Anotado.')}
+  else if(a==='borrar'){if(!borrarListo){borrarListo=true;pintaHoja();return}borrarListo=false;Store.borrar(p.id);hoja=null;pintaHoja();render();toast('Prospecto borrado.')}
+});
+document.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&(ev.target.id==='ac-pass'||ev.target.id==='ac-mail')){ev.preventDefault();enviarAcceso()}});
+document.addEventListener('change',function(ev){
+  if(ev.target.id!=='importar'||!ev.target.files[0])return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{
+      var d=JSON.parse(fr.result);if(!d||!Array.isArray(d.prospectos))throw 0;
+      if(d.meta&&!S.meta.perfil.cliente.trim()){ponMeta(d.meta);Store.meta()}
+      var n=0;d.prospectos.forEach(function(p){if(!p||!p.id||S.pros[p.id])return;S.pros[p.id]=normal(p);Store.pro(S.pros[p.id]);n++});
+      toast(n+' prospectos importados.');render();
+    }catch(e){toast('Ese archivo no es un respaldo de esta app.')}
+  };
+  fr.readAsText(ev.target.files[0]);
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target,ds=t.dataset;
+  if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.resultados=null;render();return}
+  if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
+  else if(ds.meta){var n=Math.round(Number(t.value));if(n>=1&&n<=30){S.meta.metaDiaria=n;Store.meta()}}
+  else if(ds.nf&&hoja&&hoja.d){hoja.d[ds.nf]=t.value}
+  else if(ds.pf&&hoja&&hoja.id&&S.pros[hoja.id]){var p=S.pros[hoja.id];
+    if(ds.pf==='estado'){p.estado=t.value;if(t.value==='contactada'&&!p.contactadaEn){p.contactadaEn=hoy();p.proximoSeg=enDias(3)}
+      if((t.value==='conversacion'||t.value==='propuesta'||t.value==='cliente')&&!p.respondioEn)p.respondioEn=hoy();
+      Store.pro(p);pintaHoja()}
+    else{p[ds.pf]=t.value;Store.pro(p)}}
+});
+document.addEventListener('focusout',function(){if(pendiente)setTimeout(refrescar,80)});
+
+arrancar();
+})();
+</script>
+</body>
+</html>
