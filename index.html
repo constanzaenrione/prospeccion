@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.4 (14 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.5 (14 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -314,6 +314,9 @@ function proponerFiltros(canal){
   var roles=comas(p.palabras);
   if(!roles.length)roles=b2b?['jefe de área','gerente','supervisor','director']:[String(p.cliente||'').split(/[,.]/)[0].trim()].filter(Boolean);
   var bus=roles.slice(0,4).map(function(r){return (r+' '+(norm(r).indexOf(norm(lugar))>-1?'':lugar)).trim()});
+  var pl=S.meta.plan;
+  if(pl&&pl.busquedas){var dePlan=pl.busquedas.filter(function(b){return b.canal===canal}).map(function(b){return String(b.texto||'').trim()}).filter(Boolean);
+    if(dePlan.length)bus=dePlan.concat(bus).filter(function(x,i,a){return a.map(norm).indexOf(norm(x))===i}).slice(0,5)}
   var base=b2b?['consultor','consultora','coach','capacitación','reclutador','headhunter','estudiante','vacante']
     :['academia','escuela','agencia','tienda','certificación','formación'];
   var deOferta=['coaching','coach','mentoría','mentora','consultoría','capacitación','taller','terapia','asesoría'].filter(function(w){return norm(p.oferta).indexOf(norm(w))>-1});
@@ -790,7 +793,9 @@ document.addEventListener('click',function(ev){
   if(a==='reintentar'){arrancar();return}
   if(a==='bus-revisar'){BUS.paso='validar';render();return}
   if(a==='bus-volver'){BUS.paso='';BUS.verFiltros=true;render();return}
-  if(a==='fil-proponer'){S.meta.filtros[canalActual()]=proponerFiltros(canalActual());Store.meta();BUS.verFiltros=true;render();toast('Filtros propuestos según tu perfil. Revísalos y ajústalos.');return}
+  if(a==='fil-proponer'){var c0=canalActual(),antes=JSON.stringify(filtrosDe(c0)),nuevo=proponerFiltros(c0);S.meta.filtros[c0]=nuevo;Store.meta();BUS.verFiltros=true;BUS.paso='';render();
+    toast(antes===JSON.stringify(nuevo)?'Tus filtros ya son los que propone tu perfil. Si cambias tu perfil, la propuesta cambia.':'Filtros actualizados según tu perfil. Revísalos y ajústalos.');
+    var el=$('#fil-bus');if(el){el.style.transition='background .6s';el.style.background='var(--dorado-suave)';setTimeout(function(){el.style.background=''},1200)}return}
   if(a==='fil-fix'){BUS.verFiltros=true;BUS.canal=aplicarMejora(canalActual(),v);Store.meta();render();return}
   if(a==='fil-todas'){BUS.verFiltros=true;var vv=validarBusqueda(canalActual());vv.items.forEach(function(i){if(i.fix&&i.fix.indexOf('canal-')!==0)aplicarMejora(canalActual(),i.fix)});Store.meta();render();toast('Mejoras aplicadas. Revisa el nuevo puntaje.');return}
   if(a==='bus-no'){BUS.abierto=Number(v);render();return}
