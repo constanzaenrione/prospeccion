@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.6 (14 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.8 (14 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -174,7 +174,7 @@ function clon(o){return JSON.parse(JSON.stringify(o))}
 function nuevoId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 
 var CANALES={whatsapp:'WhatsApp',instagram:'Instagram',linkedin:'LinkedIn',facebook:'Facebook',google:'Google',otro:'Otro'};
-var ETAPAS=[['nuevo','Por calificar'],['listo','Por contactar'],['contactada','Contactada'],['conversacion','En conversación'],['propuesta','Propuesta hecha'],['cliente','Cliente'],['descartada','Descartada']];
+var ETAPAS=[['revisar','Por revisar'],['nuevo','Por calificar'],['listo','Por contactar'],['contactada','Contactada'],['conversacion','En conversación'],['propuesta','Propuesta hecha'],['cliente','Cliente'],['descartada','Descartada']];
 function nombreEtapa(e){for(var i=0;i<ETAPAS.length;i++)if(ETAPAS[i][0]===e)return ETAPAS[i][1];return e}
 var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
 
@@ -212,7 +212,7 @@ var Store={colas:{},relojes:{},error:false,
     this.guardarLocal();
   }
 };
-function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5,busquedas:Array.isArray(m.busquedas)?m.busquedas:[],filtros:m.filtros||{}}}
+function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5,busquedas:Array.isArray(m.busquedas)?m.busquedas:[],filtros:m.filtros||{},ultima:m.ultima||null}}
 function pintaEstado(){$('#estado').textContent=Store.error?'Sin guardar: revisa internet':(EMAIL||'Guardado en tu cuenta')}
 
 /* ---------- Pantallas de acceso ---------- */
@@ -279,7 +279,7 @@ async function iniciarSesion(sesion){
   if(!acc.ok){pantallaSinAcceso(acc.msg);return}
   UID=sesion.user.id;
   Store.leerLocal();mostrarApp(true);pintaEstado();render();
-  try{await Store.cargar();Store.error=false}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
+  try{await Store.cargar();Store.error=false;restaurarUltima()}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
   pintaEstado();render();
 }
 async function arrancar(){
@@ -289,12 +289,38 @@ async function arrancar(){
   var s=await SB.auth.getSession();
   if(s.data&&s.data.session)await iniciarSesion(s.data.session);else pantallaLogin();
 }
-async function cerrarSesion(){try{await SB.auth.signOut()}catch(e){}UID=null;EMAIL='';S.pros={};acceso.modo='entrar';acceso.msg='';pantallaLogin()}
+async function cerrarSesion(){try{await SB.auth.signOut()}catch(e){}UID=null;EMAIL='';BUS.resultados=null;BUS.marca={};BUS.reg=null;S.pros={};acceso.modo='entrar';acceso.msg='';pantallaLogin()}
 
 /* ---------- Búsqueda automática (puente) ---------- */
 var BUS={cantidad:10,canal:'',cargando:false,resultados:null,resumen:null,error:'',reg:null,marca:{},abierto:-1};
 var MOTIVOS=[['proveedor','Vende lo mismo que yo'],['organizacion','Empresa o institución'],['perfil','No es mi cliente ideal'],['otro','Otro motivo']];
 function registro(){if(!Array.isArray(S.meta.busquedas))S.meta.busquedas=[];return S.meta.busquedas}
+function guardarUltima(){
+  if(!BUS.resultados)return;
+  S.meta.ultima={canal:BUS.canal,fecha:hoy(),resultados:BUS.resultados,marca:BUS.marca||{},reg:BUS.reg||null,
+    resumen:BUS.resumen?{encontrados:BUS.resumen.encontrados||0,descartados:(BUS.resumen.descartados||[]).length}:null};
+  Store.meta();
+}
+function restaurarUltima(){
+  var u=S.meta.ultima;if(!u||BUS.resultados||!Array.isArray(u.resultados))return;
+  BUS.canal=u.canal||BUS.canal;BUS.resultados=u.resultados;BUS.marca=u.marca||{};BUS.reg=u.reg||null;BUS.fechaRes=u.fecha;
+  BUS.resumen=u.resumen?{encontrados:u.resumen.encontrados,descartados:new Array(u.resumen.descartados||0)}:null;
+}
+async function recuperarUltima(){
+  if(!CFG.puente||!CFG.codigo){toast('Falta configurar el puente. Ve a Perfil → Conexión.');return}
+  BUS.recuperando=true;BUS.error='';render();
+  try{
+    var fi=filtrosDe('instagram');
+    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/ultima',{method:'POST',headers:{'content-type':'application/json','x-codigo':CFG.codigo},
+      body:JSON.stringify({filtro:{minSeguidores:Number(fi.min)||0,maxSeguidores:Number(fi.max)||5000},excluir:comas(filtrosDe(canalActual()).excluir)})});
+    var d=await r.json().catch(function(){return {}});
+    if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
+    if(!d.canal){toast('No encontré búsquedas anteriores en Apify.')}
+    else{BUS.canal=d.canal;BUS.resultados=d.resultados||[];BUS.resumen=d.resumen||null;BUS.marca={};BUS.reg=null;BUS.fechaRes=String(d.fecha||'').slice(0,10);guardarUltima();
+      toast('Recuperé '+BUS.resultados.length+' perfiles de tu última búsqueda, sin costo de búsqueda.')}
+  }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión. Inténtalo de nuevo.':String(e.message)}
+  BUS.recuperando=false;render();
+}
 function regActual(){var id=BUS.reg;return registro().filter(function(b){return b.id===id})[0]||null}
 function canalesAuto(){return ['instagram','linkedin','google']}
 function textosPara(canal){
@@ -425,18 +451,18 @@ async function buscarAuto(){
     BUS.resultados=d.resultados||[];BUS.resumen=d.resumen||null;BUS.marca={};BUS.abierto=-1;
     var rg={id:nuevoId(),fecha:hoy(),canal:canal,pedidos:BUS.cantidad,encontrados:BUS.resultados.length,
       revisados:(d.resumen&&d.resumen.encontrados)||BUS.resultados.length,costo:Number(d.costoUsd)||0,agregados:0,noCalza:{}};
-    registro().unshift(rg);if(registro().length>80)registro().length=80;BUS.reg=rg.id;Store.meta();
-  }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión mientras buscaba. Inténtalo de nuevo.':String(e.message)}
+    registro().unshift(rg);if(registro().length>80)registro().length=80;BUS.reg=rg.id;BUS.fechaRes=hoy();guardarUltima();
+  }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión mientras buscaba. Inténtalo de nuevo.':String(e.message);restaurarUltima()}
   BUS.cargando=false;render();
 }
-function agregarResultado(i){
+function agregarResultado(i,despues){
   var r=BUS.resultados&&BUS.resultados[i];if(!r||yaEsta(r))return null;
   var extra=r.seguidores!=null?(' · '+r.seguidores+' seguidores, '+r.publicaciones+' publicaciones'):'';
   var np=normal({id:nuevoId(),nombre:(r.nombre||r.usuario||'Sin nombre').slice(0,80),canal:CANALES[r.canal]?r.canal:'otro',link:r.perfil||'',perfil:r.perfil||'',
-    notas:(r.usuario?'@'+r.usuario+extra+'\n':'')+(r.bio||''),origen:'radar'});
+    notas:(r.usuario?'@'+r.usuario+extra+'\n':'')+(r.bio||''),origen:'radar',estado:despues?'revisar':'nuevo',busId:BUS.reg||''});
   if(np.canal==='google')np.canal='otro';
   S.pros[np.id]=np;Store.pro(np);
-  if(!BUS.marca[i]){BUS.marca[i]='agregada';var rg=regActual();if(rg){rg.agregados++;Store.meta()}}
+  if(!BUS.marca[i]){BUS.marca[i]=despues?'despues':'agregada';var rg=regActual();if(rg&&!despues){rg.agregados++}guardarUltima()}
   return np;
 }
 function canalActual(){if(!BUS.canal)BUS.canal=((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||(esB2B()?'linkedin':'instagram'));return BUS.canal}
@@ -456,17 +482,17 @@ function vBusqueda(){
    '<label class="campo" for="bus-cant" style="flex:1 1 120px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
    vFiltros()+'<p class="costo">'+(regActual()&&regActual().costo?'Esta búsqueda costó US$'+regActual().costo.toFixed(3)+'. ':'')+'Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
    (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+'<div class="fila"><button class="btn" data-act="bus-ir">Buscar así</button><button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
-     :'<div><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button></div>')+
+     :'<div class="fila"><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button>'+(BUS.resultados?'':'<button class="btn sec2" data-act="bus-recuperar"'+(BUS.recuperando?' disabled':'')+'>'+(BUS.recuperando?'Recuperando…':'Recuperar última búsqueda')+'</button>')+'</div>')+
    (BUS.error?'<p class="error">'+esc(BUS.error)+'</p>':'')+'</div></section>';
   if(BUS.resultados){
     var R=BUS.resultados;
-    h+='<section class="sec"><h3>'+R.length+' encontrados en '+CANALES[BUS.canal]+'</h3>'+
+    h+='<section class="sec"><h3>'+R.length+' encontrados en '+CANALES[BUS.canal]+'</h3>'+(BUS.fechaRes?'<p class="nota">Búsqueda del '+esc(BUS.fechaRes)+'. Quedan guardados hasta tu próxima búsqueda.</p>':'')+
       (BUS.resumen&&BUS.resumen.descartados?'<p class="nota">Se revisaron '+BUS.resumen.encontrados+' perfiles y se descartaron '+BUS.resumen.descartados.length+' (organizaciones o cuentas muy grandes).</p>':'')+
-      (R.length?'<div><button class="btn suave" data-act="bus-todos">Agregar todos a mi lista</button></div>':'<p class="nota">Esta vez no apareció nadie que calce. Prueba otro canal o cambia las búsquedas en tu perfil.</p>')+
+      (R.length?'<div class="fila"><button class="btn suave" data-act="bus-todos-despues">Guardar todos para revisar después</button></div>':'<p class="nota">Esta vez no apareció nadie que calce. Prueba otro canal o cambia las búsquedas en tu perfil.</p>')+
       '<div class="lista">'+R.map(function(r,i){var esta=yaEsta(r);
         var mk=BUS.marca[i]||'';
-        var acc=esta?'<span class="chip">En tu lista</span>':mk.indexOf('no:')===0?'<span class="chip">No calza</span>':
-          '<div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="bus-uno" data-v="'+i+'">Agregar</button><button class="btn sec2" data-act="bus-no" data-v="'+i+'">No calza</button></div>';
+        var acc=esta?'<span class="chip">'+(mk==='despues'?'Por revisar':'En tu lista')+'</span>':mk.indexOf('no:')===0?'<span class="chip">No calza</span>':
+          '<div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="bus-uno" data-v="'+i+'">Agregar</button><button class="btn sec2" data-act="bus-despues" data-v="'+i+'">Revisar después</button><button class="btn sec2" data-act="bus-no" data-v="'+i+'">No calza</button></div>';
         var motivos=BUS.abierto===i&&!mk?'<div class="fila" style="grid-column:1 / -1"><span class="nota" style="flex-basis:100%">¿Por qué no calza?</span>'+MOTIVOS.map(function(m){return '<button class="btn suave" style="flex:1 1 140px;min-height:38px;font-size:.85rem" data-act="bus-motivo" data-v="'+i+'" data-m="'+m[0]+'">'+m[1]+'</button>'}).join('')+'</div>':'';
         return '<div class="panel res"><b>'+esc(r.nombre||r.usuario)+'</b><div class="acc">'+acc+'</div>'+
           '<span class="sub">'+(r.usuario?'@'+esc(r.usuario)+' · ':'')+(r.seguidores!=null?esc(r.seguidores)+' seguidores':'')+'</span>'+
@@ -614,15 +640,16 @@ function vHoy(){
   var resp=L.filter(function(x){return x.estado==='conversacion'||x.estado==='propuesta'});
   var seg=L.filter(function(x){return x.estado==='contactada'&&x.proximoSeg&&x.proximoSeg<=hoy()});
   var listos=L.filter(function(x){return x.estado==='listo'}).sort(function(a,b){return pts(b)-pts(a)});
-  var nuevos=L.filter(function(x){return x.estado==='nuevo'});
+  var nuevos=L.filter(function(x){return x.estado==='nuevo'}),porRev=L.filter(function(x){return x.estado==='revisar'});
   var h='<section class="sec"><span class="eyebrow">Hoy</span><h2>'+env+' de '+meta+' mensajes enviados</h2>'+
     '<div class="avance" aria-hidden="true"><i style="width:'+Math.min(100,Math.round(env/meta*100))+'%"></i></div>'+
     (cupo?'':'<p class="nota">Meta de hoy cumplida. Lo que queda puede esperar a mañana.</p>')+'</section>';
   h+=grupo('Te respondieron','Aquí hay una conversación abierta. Esto va primero.',resp);
   h+=grupo('Seguimientos de hoy','Les escribiste y aún no responden.',seg,function(x){return CANALES[x.canal]+' · '+(x.seguimientos?x.seguimientos+' seguimiento(s)':'primer seguimiento')});
   if(cupo)h+=grupo('Para escribir hoy','Las de mayor puntaje primero.',listos.slice(0,cupo),function(x){return CANALES[x.canal]+(x.motivo?' · '+x.motivo:'')});
+  if(porRev.length)h+='<section class="sec"><h3>Por revisar</h3><p class="nota">'+porRev.length+' perfil(es) guardados de tus búsquedas. Decide si calzan.</p><div><button class="btn suave" data-act="filtro" data-v="revisar">Revisar ahora</button></div></section>';
   if(nuevos.length)h+='<section class="sec"><h3>Por calificar</h3><p class="nota">'+nuevos.length+' prospecto(s) esperan puntaje.</p><div><button class="btn suave" data-act="filtro" data-v="nuevo">Ver y calificar</button></div></section>';
-  if(!resp.length&&!seg.length&&!listos.length&&!nuevos.length)h+='<section class="sec"><p class="nota">Nada pendiente. Si te queda tiempo, busca prospectos nuevos.</p><div><button class="btn sec2" data-act="tab" data-v="encontrar">Ir a Encontrar</button></div></section>';
+  if(!resp.length&&!seg.length&&!listos.length&&!nuevos.length&&!porRev.length)h+='<section class="sec"><p class="nota">Nada pendiente. Si te queda tiempo, busca prospectos nuevos.</p><div><button class="btn sec2" data-act="tab" data-v="encontrar">Ir a Encontrar</button></div></section>';
   return h;
 }
 function vEncontrar(){
@@ -749,7 +776,8 @@ function pintaHoja(){
   var p=S.pros[hoja.id];if(!p){hoja=null;el.hidden=true;return}
   var sen=(S.meta.plan&&S.meta.plan.senales)||SENALES_BASE,e=p.estado;
   var acciones='';
-  if(e==='nuevo'||e==='listo')acciones='<button class="btn" data-act="etapa" data-v="enviada">Ya le escribí</button>';
+  if(e==='revisar')acciones='<button class="btn" data-act="etapa" data-v="calza">Sí calza</button>'+MOTIVOS.map(function(m){return '<button class="btn sec2" data-act="etapa" data-v="nocalza:'+m[0]+'">No calza: '+m[1].toLowerCase()+'</button>'}).join('');
+  else if(e==='nuevo'||e==='listo')acciones='<button class="btn" data-act="etapa" data-v="enviada">Ya le escribí</button>';
   else if(e==='contactada')acciones='<button class="btn" data-act="etapa" data-v="respondio">Me respondió</button><button class="btn sec2" data-act="etapa" data-v="seguimiento">Envié seguimiento</button>';
   else if(e==='conversacion')acciones='<button class="btn" data-act="etapa" data-v="propuesta">Hice mi propuesta</button><button class="btn sec2" data-act="etapa" data-v="cliente">Compró</button>';
   else if(e==='propuesta')acciones='<button class="btn" data-act="etapa" data-v="cliente">Compró</button>';
@@ -784,8 +812,11 @@ function linksPerfil(p){
   if(ok.test(p.link)&&p.link!==perfil)L.push(['Ver dónde la encontré',p.link]);
   return L.length?'<div class="links">'+L.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener">'+l[0]+'</a>'}).join('')+'</div>':'';
 }
+function regDe(p){return registro().filter(function(b){return b.id===p.busId})[0]||null}
 function mover(p,a){
   var h=hoy();
+  if(a==='calza'){p.estado=p.calificado?'listo':'nuevo';var rg=regDe(p);if(rg){rg.agregados++;Store.meta()}Store.pro(p);return}
+  if(a.indexOf('nocalza:')===0){var m=a.slice(8);p.estado='descartada';p.motivoNo=m;var rg2=regDe(p);if(rg2){rg2.noCalza[m]=(rg2.noCalza[m]||0)+1;Store.meta()}Store.pro(p);return}
   if(a==='enviada'){p.estado='contactada';p.contactadaEn=p.contactadaEn||h;p.ultimoEnvio=h;p.proximoSeg=enDias(3);if(!p.mensaje){var t=$('#fp-mensaje');if(t)p.mensaje=t.value}}
   else if(a==='seguimiento'){p.seguimientos=(p.seguimientos||0)+1;p.ultimoEnvio=h;p.proximoSeg=enDias(4)}
   else if(a==='respondio'){p.estado='conversacion';p.respondioEn=p.respondioEn||h;p.proximoSeg=''}
@@ -812,6 +843,7 @@ document.addEventListener('click',function(ev){
   if(a==='salir'){cerrarSesion();return}
   if(a==='bus-ir'){buscarAuto();return}
   if(a==='reintentar'){arrancar();return}
+  if(a==='bus-recuperar'){recuperarUltima();return}
   if(a==='gratis-sug'){BUS.gratis=v;render();return}
   if(a==='gratis-donde'){BUS.gratisDonde=v;render();return}
   if(a==='bus-revisar'){BUS.paso='validar';render();return}
@@ -822,8 +854,10 @@ document.addEventListener('click',function(ev){
   if(a==='fil-fix'){BUS.verFiltros=true;BUS.canal=aplicarMejora(canalActual(),v);Store.meta();render();return}
   if(a==='fil-todas'){BUS.verFiltros=true;var vv=validarBusqueda(canalActual());vv.items.forEach(function(i){if(i.fix&&i.fix.indexOf('canal-')!==0)aplicarMejora(canalActual(),i.fix)});Store.meta();render();toast('Mejoras aplicadas. Revisa el nuevo puntaje.');return}
   if(a==='bus-no'){BUS.abierto=Number(v);render();return}
-  if(a==='bus-motivo'){var i2=Number(v);if(!BUS.marca[i2]){BUS.marca[i2]='no:'+b.dataset.m;var rg=regActual();if(rg){rg.noCalza[b.dataset.m]=(rg.noCalza[b.dataset.m]||0)+1;Store.meta()}}BUS.abierto=-1;render();return}
+  if(a==='bus-motivo'){var i2=Number(v);if(!BUS.marca[i2]){BUS.marca[i2]='no:'+b.dataset.m;var rg=regActual();if(rg){rg.noCalza[b.dataset.m]=(rg.noCalza[b.dataset.m]||0)+1}guardarUltima()}BUS.abierto=-1;render();return}
   if(a==='bus-uno'){if(agregarResultado(Number(v)))toast('Agregada a tu lista. Ponle puntaje en Prospectos.');render();return}
+  if(a==='bus-despues'){if(agregarResultado(Number(v),true))toast('Guardada en Prospectos → Por revisar.');render();return}
+  if(a==='bus-todos-despues'){var n2=0;(BUS.resultados||[]).forEach(function(r,i){if(!BUS.marca[i]&&agregarResultado(i,true))n2++});toast(n2?n2+' guardadas en Por revisar.':'No quedaban perfiles sin revisar.');render();return}
   if(a==='bus-todos'){var n=0;(BUS.resultados||[]).forEach(function(r,i){if(agregarResultado(i))n++});toast(n?n+' agregadas a tu lista.':'Ya estaban todas en tu lista.');render();return}
   if(a==='tab'){S.tab=v;render();window.scrollTo(0,0)}
   else if(a==='filtro'){S.filtro=v;S.tab='prospectos';render()}
@@ -865,7 +899,7 @@ document.addEventListener('input',function(ev){
   var t=ev.target,ds=t.dataset;
   if(ds.gratis){BUS.gratis=t.value;var ga=$('#gratis-ir'),gu=urlGratis();if(ga){ga.href=gu||'#';ga.style.opacity=gu?'':'.55';ga.style.pointerEvents=gu?'':'none'}return}
   if(ds.fil){var ff=filtrosDe(canalActual());ff[ds.fil]=t.value;Store.meta();BUS.paso='';return}
-  if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.resultados=null;BUS.paso='';render();return}
+  if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.paso='';render();return}
   if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
   else if(ds.meta){var n=Math.round(Number(t.value));if(n>=1&&n<=30){S.meta.metaDiaria=n;Store.meta()}}
   else if(ds.nf&&hoja&&hoja.d){hoja.d[ds.nf]=t.value}
