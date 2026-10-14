@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.2 (13 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.4 (14 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -212,8 +212,8 @@ var Store={colas:{},relojes:{},error:false,
     this.guardarLocal();
   }
 };
-function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5}}
-function pintaEstado(){$('#estado').textContent=Store.error?'Sin guardar: revisa internet':'Guardado en tu cuenta'}
+function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5,busquedas:Array.isArray(m.busquedas)?m.busquedas:[],filtros:m.filtros||{}}}
+function pintaEstado(){$('#estado').textContent=Store.error?'Sin guardar: revisa internet':(EMAIL||'Guardado en tu cuenta')}
 
 /* ---------- Pantallas de acceso ---------- */
 var acceso={modo:'entrar',msg:'',cargando:false};
@@ -261,7 +261,22 @@ async function enviarAcceso(){
     pantallaLogin();
   }
 }
+var EMAIL='';
+async function verificarAcceso(){
+  var r=await SB.from('pi_acceso').select('email,activo').eq('email',EMAIL.toLowerCase()).maybeSingle();
+  if(r.error)return {ok:false,msg:'No se pudo verificar tu acceso ('+r.error.message+'). Revisa tu internet e inténtalo de nuevo.'};
+  if(!r.data||!r.data.activo)return {ok:false,msg:'Tu cuenta ('+EMAIL+') todavía no tiene acceso a esta app. Pídele a tu mentora que te habilite.'};
+  return {ok:true};
+}
+function pantallaSinAcceso(msg){
+  mostrarApp(false);
+  $('#acceso').innerHTML='<span class="eyebrow">Prospección Inteligente</span><h2>Acceso pendiente</h2><p class="nota">'+esc(msg)+'</p>'+
+   '<div class="fila"><button class="btn" data-act="reintentar">Volver a intentar</button><button class="btn sec2" data-act="salir">Entrar con otra cuenta</button></div>';
+}
 async function iniciarSesion(sesion){
+  EMAIL=sesion.user.email||'';
+  var acc=await verificarAcceso();
+  if(!acc.ok){pantallaSinAcceso(acc.msg);return}
   UID=sesion.user.id;
   Store.leerLocal();mostrarApp(true);pintaEstado();render();
   try{await Store.cargar();Store.error=false}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
@@ -274,16 +289,96 @@ async function arrancar(){
   var s=await SB.auth.getSession();
   if(s.data&&s.data.session)await iniciarSesion(s.data.session);else pantallaLogin();
 }
-async function cerrarSesion(){try{await SB.auth.signOut()}catch(e){}UID=null;S.pros={};acceso.modo='entrar';acceso.msg='';pantallaLogin()}
+async function cerrarSesion(){try{await SB.auth.signOut()}catch(e){}UID=null;EMAIL='';S.pros={};acceso.modo='entrar';acceso.msg='';pantallaLogin()}
 
 /* ---------- Búsqueda automática (puente) ---------- */
-var BUS={cantidad:10,canal:'',cargando:false,resultados:null,resumen:null,error:''};
+var BUS={cantidad:10,canal:'',cargando:false,resultados:null,resumen:null,error:'',reg:null,marca:{},abierto:-1};
+var MOTIVOS=[['proveedor','Vende lo mismo que yo'],['organizacion','Empresa o institución'],['perfil','No es mi cliente ideal'],['otro','Otro motivo']];
+function registro(){if(!Array.isArray(S.meta.busquedas))S.meta.busquedas=[];return S.meta.busquedas}
+function regActual(){var id=BUS.reg;return registro().filter(function(b){return b.id===id})[0]||null}
 function canalesAuto(){return ['instagram','linkedin','google']}
 function textosPara(canal){
+  var fl=lineas(filtrosDe(canal).busquedas);if(fl.length)return fl.slice(0,5);
   var pl=S.meta.plan,p=S.meta.perfil;
   var t=pl?pl.busquedas.filter(function(b){return b.canal===canal}).map(function(b){return b.texto}):[];
   if(!t.length)t=p.palabras.split(/[,;\n]/).map(function(s){return (s.trim()+' '+p.lugar).trim()}).filter(Boolean);
   return t.slice(0,5);
+}
+/* ---------- Filtros de búsqueda: propuesta y validación ---------- */
+function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+function lineas(t){return String(t||'').split(/\n/).map(function(x){return x.trim()}).filter(Boolean)}
+function comas(t){return String(t||'').split(/[,;\n]/).map(function(x){return x.trim()}).filter(Boolean)}
+function esB2B(){var p=S.meta.perfil;return /jef|gerent|director|l[ií]der|ejecutiv|supervis|mandos|empresa|rrhh|recursos humanos|corporativ/.test(norm(p.cliente+' '+p.palabras))}
+function proponerFiltros(canal){
+  var p=S.meta.perfil,lugar=String(p.lugar||'').trim(),b2b=esB2B();
+  var roles=comas(p.palabras);
+  if(!roles.length)roles=b2b?['jefe de área','gerente','supervisor','director']:[String(p.cliente||'').split(/[,.]/)[0].trim()].filter(Boolean);
+  var bus=roles.slice(0,4).map(function(r){return (r+' '+(norm(r).indexOf(norm(lugar))>-1?'':lugar)).trim()});
+  var base=b2b?['consultor','consultora','coach','capacitación','reclutador','headhunter','estudiante','vacante']
+    :['academia','escuela','agencia','tienda','certificación','formación'];
+  var deOferta=['coaching','coach','mentoría','mentora','consultoría','capacitación','taller','terapia','asesoría'].filter(function(w){return norm(p.oferta).indexOf(norm(w))>-1});
+  var cliente=norm(p.cliente+' '+p.palabras);
+  var ex=[];base.concat(deOferta).forEach(function(w){if(cliente.indexOf(norm(w))===-1&&ex.map(norm).indexOf(norm(w))===-1)ex.push(w)});
+  return {busquedas:bus.join('\n'),excluir:ex.join(', '),min:canal==='instagram'?100:'',max:canal==='instagram'?5000:''};
+}
+function filtrosDe(canal){
+  if(!S.meta.filtros)S.meta.filtros={};
+  if(!S.meta.filtros[canal])S.meta.filtros[canal]=proponerFiltros(canal);
+  return S.meta.filtros[canal];
+}
+function validarBusqueda(canal){
+  var f=filtrosDe(canal),p=S.meta.perfil,items=[],pts=100;
+  function add(tipo,texto,fix,resta){items.push({tipo:tipo,texto:texto,fix:fix||''});pts-=resta||0}
+  var B=lineas(f.busquedas),E=comas(f.excluir),lugar=norm(p.lugar).trim();
+  if(!B.length){add('alerta','No hay búsquedas escritas. Sin ellas la app no sabe qué buscar.','proponer',100);return {pts:0,items:items}}
+  var b2b=esB2B();
+  if(b2b&&canal==='instagram')add('mejora','Tu cliente trabaja en empresas: en LinkedIn muestra su cargo y es más fácil de encontrar que en Instagram.','canal-linkedin',20);
+  if(!b2b&&canal==='linkedin')add('mejora','Tu cliente suele mostrarse más en Instagram que en LinkedIn.','canal-instagram',10);
+  if(B.length>5)add('mejora','Hay '+B.length+' búsquedas y solo se usan las primeras 5.','recortar',5);
+  var dup=B.length-B.map(norm).filter(function(x,i,a){return a.indexOf(x)===i}).length;
+  if(dup)add('mejora','Hay búsquedas repetidas: gastan sin traer gente nueva.','sin-duplicados',5);
+  var comillas=B.filter(function(b){return /["“”]|\bOR\b/.test(b)});
+  if(comillas.length)add('mejora','Las comillas y la palabra OR hacen la búsqueda tan exacta que suele traer 0 resultados.','sin-comillas',15);
+  var largas=B.filter(function(b){return b.split(/\s+/).length>6});
+  if(largas.length)add('mejora',largas.length+' búsqueda(s) con más de 6 palabras: mientras más larga, menos resultados.','acortar',10);
+  var cortas=B.filter(function(b){return b.split(/\s+/).length<2});
+  if(cortas.length)add('mejora',cortas.length+' búsqueda(s) de una sola palabra: traen cuentas grandes o famosas, no a tu cliente.','agregar-lugar',10);
+  if(lugar){var sinLugar=B.filter(function(b){return norm(b).indexOf(lugar)===-1});
+    if(sinLugar.length)add('mejora',sinLugar.length+' búsqueda(s) sin "'+p.lugar+'": puede traer gente de otros países.','agregar-lugar',10)}
+  else add('mejora','No indicaste país o ciudad en tu perfil. Agregarlo enfoca mucho la búsqueda.','',5);
+  if(!E.length)add('mejora','Sin exclusiones aparecerán proveedores y competencia (quienes venden lo mismo que tú).','exclusiones',15);
+  var choque=E.filter(function(e){return B.some(function(b){return norm(b).indexOf(norm(e))>-1})});
+  if(choque.length)add('alerta','Excluyes "'+choque.join('", "')+'" pero también lo buscas: se anulan entre sí.','quitar-choques',20);
+  if(canal==='instagram'){var mx=Number(f.max)||0;if(mx>10000)add('mejora','Más de 10.000 seguidores suele ser alguien con negocio ya armado.','seguidores',5)}
+  var R=registro().filter(function(r){return r.canal===canal}),ag=0,no=0,mot={};
+  R.forEach(function(r){ag+=r.agregados;for(var k in r.noCalza){no+=r.noCalza[k];mot[k]=(mot[k]||0)+r.noCalza[k]}});
+  if(ag+no>=5&&no/(ag+no)>0.5){var top=Object.keys(mot).sort(function(a,b){return mot[b]-mot[a]})[0];
+    add('alerta','En tus búsquedas anteriores en '+CANALES[canal]+' no calzaron '+Math.round(no/(ag+no)*100)+'%. El motivo más común: '+(MOTIVOS.filter(function(m){return m[0]===top})[0]||['',''])[1].toLowerCase()+'.',top==='proveedor'||top==='organizacion'?'exclusiones':'',15)}
+  if(BUS.cantidad>=20)add('bien','Pediste 20: cuesta más y tarda más. Con 10 ya puedes medir si la búsqueda sirve.','',0);
+  pts=Math.max(0,Math.min(100,pts));
+  if(!items.filter(function(i){return i.tipo!=='bien'}).length)items.unshift({tipo:'bien',texto:'Tu búsqueda está bien armada.',fix:''});
+  return {pts:pts,items:items};
+}
+function aplicarMejora(canal,fix){
+  var f=filtrosDe(canal),p=S.meta.perfil,B=lineas(f.busquedas),E=comas(f.excluir),lugar=String(p.lugar||'').trim();
+  if(fix==='proponer'){S.meta.filtros[canal]=proponerFiltros(canal);return canal}
+  if(fix==='canal-linkedin'){filtrosDe('linkedin');return 'linkedin'}
+  if(fix==='canal-instagram'){filtrosDe('instagram');return 'instagram'}
+  if(fix==='recortar')B=B.slice(0,5);
+  if(fix==='sin-duplicados')B=B.filter(function(x,i){return B.map(norm).indexOf(norm(x))===i});
+  if(fix==='sin-comillas')B=B.map(function(b){return b.replace(/["“”]/g,'').replace(/\s+OR\s+/g,' ').replace(/\s+/g,' ').trim()});
+  if(fix==='acortar')B=B.map(function(b){var w=b.split(/\s+/);if(w.length<=6)return b;var l=lugar&&norm(b).indexOf(norm(lugar))>-1?' '+lugar:'';return w.filter(function(x){return norm(x)!==norm(lugar)}).slice(0,4).join(' ')+l});
+  if(fix==='agregar-lugar'&&lugar)B=B.map(function(b){return norm(b).indexOf(norm(lugar))>-1?b:b+' '+lugar});
+  if(fix==='exclusiones'){comas(proponerFiltros(canal).excluir).forEach(function(w){if(E.map(norm).indexOf(norm(w))===-1)E.push(w)})}
+  if(fix==='quitar-choques')E=E.filter(function(e){return !B.some(function(b){return norm(b).indexOf(norm(e))>-1})});
+  if(fix==='seguidores')f.max=5000;
+  f.busquedas=B.join('\n');f.excluir=E.join(', ');return canal;
+}
+function vValidacion(canal){
+  var v=validarBusqueda(canal),c=v.pts>=75?'ok':v.pts>=50?'tib':'cal',et=v.pts>=75?'Buena':v.pts>=50?'Mejorable':'Débil';
+  return '<div class="panel" style="border-color:var(--dorado)"><div class="fila" style="justify-content:space-between;align-items:center"><b>Eficiencia estimada</b><span class="pt '+(c==='ok'?'fri':c)+'">'+v.pts+'/100 · '+et+'</span></div>'+
+   '<ul class="senales">'+v.items.map(function(i){return '<li>'+(i.tipo==='alerta'?'⚠ ':i.tipo==='bien'?'✓ ':'')+esc(i.texto)+(i.fix?' <button class="btn suave" style="min-height:0;padding:4px 10px;font-size:.8rem" data-act="fil-fix" data-v="'+i.fix+'">Corregir</button>':'')+'</li>'}).join('')+'</ul>'+
+   (v.items.some(function(i){return i.fix})?'<div><button class="btn suave" data-act="fil-todas">Aplicar todas las mejoras</button></div>':'')+'</div>';
 }
 function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
 async function buscarAuto(){
@@ -291,13 +386,17 @@ async function buscarAuto(){
   var canal=BUS.canal||((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||'instagram');
   var textos=textosPara(canal);
   if(!textos.length){toast('Primero completa tu cliente ideal en Perfil.');return}
-  BUS.canal=canal;BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
+  BUS.canal=canal;BUS.paso='';BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
   try{
     var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:{'content-type':'application/json','x-codigo':CFG.codigo},
-      body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,filtro:canal==='instagram'?{minSeguidores:100,maxSeguidores:5000}:null})});
+      body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,excluir:comas(filtrosDe(canal).excluir),
+        filtro:canal==='instagram'?{minSeguidores:Number(filtrosDe(canal).min)||0,maxSeguidores:Number(filtrosDe(canal).max)||5000}:null})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
-    BUS.resultados=d.resultados||[];BUS.resumen=d.resumen||null;
+    BUS.resultados=d.resultados||[];BUS.resumen=d.resumen||null;BUS.marca={};BUS.abierto=-1;
+    var rg={id:nuevoId(),fecha:hoy(),canal:canal,pedidos:BUS.cantidad,encontrados:BUS.resultados.length,
+      revisados:(d.resumen&&d.resumen.encontrados)||BUS.resultados.length,costo:Number(d.costoUsd)||0,agregados:0,noCalza:{}};
+    registro().unshift(rg);if(registro().length>80)registro().length=80;BUS.reg=rg.id;Store.meta();
   }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión mientras buscaba. Inténtalo de nuevo.':String(e.message)}
   BUS.cargando=false;render();
 }
@@ -307,16 +406,28 @@ function agregarResultado(i){
   var np=normal({id:nuevoId(),nombre:(r.nombre||r.usuario||'Sin nombre').slice(0,80),canal:CANALES[r.canal]?r.canal:'otro',link:r.perfil||'',perfil:r.perfil||'',
     notas:(r.usuario?'@'+r.usuario+extra+'\n':'')+(r.bio||''),origen:'radar'});
   if(np.canal==='google')np.canal='otro';
-  S.pros[np.id]=np;Store.pro(np);return np;
+  S.pros[np.id]=np;Store.pro(np);
+  if(!BUS.marca[i]){BUS.marca[i]='agregada';var rg=regActual();if(rg){rg.agregados++;Store.meta()}}
+  return np;
+}
+function canalActual(){if(!BUS.canal)BUS.canal=((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||(esB2B()?'linkedin':'instagram'));return BUS.canal}
+function vFiltros(){
+  var c=canalActual(),f=filtrosDe(c);
+  return '<details'+(BUS.verFiltros?' open':'')+' style="display:flex;flex-direction:column;gap:10px" id="det-fil"><summary style="cursor:pointer;font-weight:600;color:var(--morado);padding:6px 0">Tus filtros para '+CANALES[c]+'</summary>'+
+   '<label class="campo" for="fil-bus">Buscar<small>Una búsqueda por línea. Cargo o forma en que tu cliente se presenta, más el lugar.</small><textarea id="fil-bus" data-fil="busquedas">'+esc(f.busquedas)+'</textarea></label>'+
+   '<label class="campo" for="fil-ex">Excluir<small>Palabras que NO quieres que aparezcan, separadas por coma (por ejemplo, quienes venden lo mismo que tú).</small><input type="text" id="fil-ex" data-fil="excluir" value="'+esc(f.excluir)+'"></label>'+
+   (c==='instagram'?'<div class="fila"><label class="campo" for="fil-min" style="flex:1 1 120px">Mínimo de seguidores<input type="number" inputmode="numeric" id="fil-min" data-fil="min" value="'+esc(f.min)+'"></label><label class="campo" for="fil-max" style="flex:1 1 120px">Máximo de seguidores<input type="number" inputmode="numeric" id="fil-max" data-fil="max" value="'+esc(f.max)+'"></label></div>':'')+
+   '<div><button class="btn sec2" data-act="fil-proponer">Proponer filtros según mi perfil</button></div></details>';
 }
 function vBusqueda(){
-  var opc=canalesAuto().map(function(c){return '<option value="'+c+'"'+(BUS.canal===c?' selected':'')+'>'+CANALES[c]+'</option>'}).join('');
+  canalActual();var opc=canalesAuto().map(function(c){return '<option value="'+c+'"'+(BUS.canal===c?' selected':'')+'>'+CANALES[c]+'</option>'}).join('');
   var h='<section class="sec"><h3>Búsqueda automática</h3><p class="nota">La app busca por ti y te trae perfiles listos para revisar. Usa tu crédito de Apify.</p>'+
    '<div class="panel">'+
    '<div class="fila"><label class="campo" for="bus-canal" style="flex:1 1 140px">Dónde<select id="bus-canal" data-bus="canal">'+opc+'</select></label>'+
    '<label class="campo" for="bus-cant" style="flex:1 1 120px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
-   '<p class="costo">Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
-   '<div><button class="btn" data-act="bus-ir"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Buscar prospectos')+'</button></div>'+
+   vFiltros()+'<p class="costo">'+(regActual()&&regActual().costo?'Esta búsqueda costó US$'+regActual().costo.toFixed(3)+'. ':'')+'Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
+   (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+'<div class="fila"><button class="btn" data-act="bus-ir">Buscar así</button><button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
+     :'<div><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button></div>')+
    (BUS.error?'<p class="error">'+esc(BUS.error)+'</p>':'')+'</div></section>';
   if(BUS.resultados){
     var R=BUS.resultados;
@@ -324,10 +435,14 @@ function vBusqueda(){
       (BUS.resumen&&BUS.resumen.descartados?'<p class="nota">Se revisaron '+BUS.resumen.encontrados+' perfiles y se descartaron '+BUS.resumen.descartados.length+' (organizaciones o cuentas muy grandes).</p>':'')+
       (R.length?'<div><button class="btn suave" data-act="bus-todos">Agregar todos a mi lista</button></div>':'<p class="nota">Esta vez no apareció nadie que calce. Prueba otro canal o cambia las búsquedas en tu perfil.</p>')+
       '<div class="lista">'+R.map(function(r,i){var esta=yaEsta(r);
-        return '<div class="panel res"><b>'+esc(r.nombre||r.usuario)+'</b><div class="acc">'+(esta?'<span class="chip">En tu lista</span>':'<button class="btn" data-act="bus-uno" data-v="'+i+'">Agregar</button>')+'</div>'+
+        var mk=BUS.marca[i]||'';
+        var acc=esta?'<span class="chip">En tu lista</span>':mk.indexOf('no:')===0?'<span class="chip">No calza</span>':
+          '<div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="bus-uno" data-v="'+i+'">Agregar</button><button class="btn sec2" data-act="bus-no" data-v="'+i+'">No calza</button></div>';
+        var motivos=BUS.abierto===i&&!mk?'<div class="fila" style="grid-column:1 / -1"><span class="nota" style="flex-basis:100%">¿Por qué no calza?</span>'+MOTIVOS.map(function(m){return '<button class="btn suave" style="flex:1 1 140px;min-height:38px;font-size:.85rem" data-act="bus-motivo" data-v="'+i+'" data-m="'+m[0]+'">'+m[1]+'</button>'}).join('')+'</div>':'';
+        return '<div class="panel res"><b>'+esc(r.nombre||r.usuario)+'</b><div class="acc">'+acc+'</div>'+
           '<span class="sub">'+(r.usuario?'@'+esc(r.usuario)+' · ':'')+(r.seguidores!=null?esc(r.seguidores)+' seguidores':'')+'</span>'+
           '<span class="sub">'+esc(String(r.bio||'').slice(0,220))+'</span>'+
-          (r.perfil?'<div class="links" style="grid-column:1 / -1"><a href="'+esc(r.perfil)+'" target="_blank" rel="noopener">Ver perfil</a></div>':'')+'</div>'}).join('')+'</div></section>';
+          (r.perfil?'<div class="links" style="grid-column:1 / -1"><a href="'+esc(r.perfil)+'" target="_blank" rel="noopener">Ver perfil</a></div>':'')+motivos+'</div>'}).join('')+'</div></section>';
   }
   return h;
 }
@@ -510,9 +625,25 @@ function vProspectos(){
   h+=V.length?'<div class="lista">'+V.map(function(p){return tarjeta(p)}).join('')+'</div>':'<p class="nota">No hay prospectos en esta etapa.</p>';
   return h;
 }
+function vCostos(){
+  var R=registro();if(!R.length)return '';
+  var tot={b:0,enc:0,ag:0,no:0,costo:0},porCanal={},mot={};
+  R.forEach(function(r){var no=0;for(var k in r.noCalza){no+=r.noCalza[k];mot[k]=(mot[k]||0)+r.noCalza[k]}
+    var c=porCanal[r.canal]=porCanal[r.canal]||{b:0,enc:0,ag:0,no:0,costo:0};
+    [tot,c].forEach(function(x){x.b++;x.enc+=r.encontrados;x.ag+=r.agregados;x.no+=no;x.costo+=r.costo||0})});
+  function usd(n){return 'US$'+n.toFixed(3)}
+  function fila(nom,x){var rev=x.ag+x.no;return '<tr><td>'+nom+'</td><td>'+x.b+'</td><td>'+x.enc+'</td><td>'+x.ag+'</td><td>'+(rev?Math.round(x.no/rev*100)+'%':'—')+'</td><td>'+usd(x.costo)+'</td><td>'+(x.ag?usd(x.costo/x.ag):'—')+'</td></tr>'}
+  var h='<section class="sec"><h3>Búsquedas automáticas</h3><p class="nota">Cuánto cuestan y qué tan certeras son. "No calzan" se calcula sobre los resultados que revisaste.</p>'+
+   '<div class="panel tabla"><table><tr><th>Canal</th><th>Búsquedas</th><th>Encontrados</th><th>Agregados</th><th>No calzan</th><th>Costo</th><th>Por agregado</th></tr>'+
+   Object.keys(porCanal).map(function(k){return fila(CANALES[k]||k,porCanal[k])}).join('')+(Object.keys(porCanal).length>1?fila('<b>Total</b>',tot):'')+'</table></div>';
+  if(tot.no)h+='<div class="panel"><b>Por qué no calzan</b><ul class="senales">'+MOTIVOS.filter(function(m){return mot[m[0]]}).map(function(m){return '<li>'+m[1]+': '+mot[m[0]]+'</li>'}).join('')+'</ul></div>';
+  h+='<div class="panel tabla"><table><tr><th>Fecha</th><th>Canal</th><th>Encontrados</th><th>Agregados</th><th>Costo</th></tr>'+
+   R.slice(0,10).map(function(r){return '<tr><td>'+esc(r.fecha)+'</td><td>'+(CANALES[r.canal]||r.canal)+'</td><td>'+r.encontrados+'</td><td>'+r.agregados+'</td><td>'+usd(r.costo||0)+'</td></tr>'}).join('')+'</table></div></section>';
+  return h;
+}
 function vMedir(){
   var L=lista();
-  var h='<section class="sec"><span class="eyebrow">Medir</span><h2>Qué está funcionando</h2></section>';
+  var h='<section class="sec"><span class="eyebrow">Medir</span><h2>Qué está funcionando</h2></section>'+vCostos();
   if(!L.length)return h+'<p class="nota">Aquí verás qué canal y qué tipo de prospecto te trae conversaciones y clientes. Aparece cuando empieces a contactar.</p>';
   var cal=L.filter(function(x){return x.calificado}).length,con=L.filter(function(x){return x.contactadaEn}),res=con.filter(function(x){return x.respondioEn}),cli=L.filter(function(x){return x.estado==='cliente'}).length;
   var pasos=[['Encontradas',L.length],['Calificadas',cal],['Contactadas',con.length],['Respondieron',res.length],['Clientes',cli]];
@@ -558,7 +689,7 @@ function vPerfil(){
    '<div><button class="btn" data-act="plan"'+(ocupada==='plan'?' disabled':'')+'>'+(ocupada==='plan'?'Pensando…':pl?'Actualizar mi radar':'Crear mi radar')+'</button></div>'+
    (pl?'<p class="nota">Radar creado el '+esc(pl.creado)+'. Actualízalo si cambias tu cliente ideal.</p>':'')+
    '</section><section class="sec"><h3>Cuenta y conexión</h3><div class="panel">'+
-   '<p class="nota">Puente de búsqueda: '+(CFG.codigo?'configurado':'falta el código de acceso')+'.</p>'+
+   '<p>Conectada como <b>'+esc(EMAIL)+'</b></p><p class="nota">Puente de búsqueda: '+(CFG.codigo?'configurado':'falta el código de acceso')+'.</p>'+
    '<div class="fila"><button class="btn sec2" data-act="ac-conexion">Cambiar conexión</button><button class="btn sec2" data-act="salir">Cerrar sesión</button></div>'+
    '<label class="campo" for="importar">Importar datos<small>Para traer prospectos desde un archivo de respaldo (.json).</small><input type="file" id="importar" accept=".json,application/json"></label>'+
    '</div>'+
@@ -656,6 +787,14 @@ document.addEventListener('click',function(ev){
   if(a==='ac-conexion'){acceso.msg='';pantallaConexion();return}
   if(a==='salir'){cerrarSesion();return}
   if(a==='bus-ir'){buscarAuto();return}
+  if(a==='reintentar'){arrancar();return}
+  if(a==='bus-revisar'){BUS.paso='validar';render();return}
+  if(a==='bus-volver'){BUS.paso='';BUS.verFiltros=true;render();return}
+  if(a==='fil-proponer'){S.meta.filtros[canalActual()]=proponerFiltros(canalActual());Store.meta();BUS.verFiltros=true;render();toast('Filtros propuestos según tu perfil. Revísalos y ajústalos.');return}
+  if(a==='fil-fix'){BUS.verFiltros=true;BUS.canal=aplicarMejora(canalActual(),v);Store.meta();render();return}
+  if(a==='fil-todas'){BUS.verFiltros=true;var vv=validarBusqueda(canalActual());vv.items.forEach(function(i){if(i.fix&&i.fix.indexOf('canal-')!==0)aplicarMejora(canalActual(),i.fix)});Store.meta();render();toast('Mejoras aplicadas. Revisa el nuevo puntaje.');return}
+  if(a==='bus-no'){BUS.abierto=Number(v);render();return}
+  if(a==='bus-motivo'){var i2=Number(v);if(!BUS.marca[i2]){BUS.marca[i2]='no:'+b.dataset.m;var rg=regActual();if(rg){rg.noCalza[b.dataset.m]=(rg.noCalza[b.dataset.m]||0)+1;Store.meta()}}BUS.abierto=-1;render();return}
   if(a==='bus-uno'){if(agregarResultado(Number(v)))toast('Agregada a tu lista. Ponle puntaje en Prospectos.');render();return}
   if(a==='bus-todos'){var n=0;(BUS.resultados||[]).forEach(function(r,i){if(agregarResultado(i))n++});toast(n?n+' agregadas a tu lista.':'Ya estaban todas en tu lista.');render();return}
   if(a==='tab'){S.tab=v;render();window.scrollTo(0,0)}
@@ -680,6 +819,7 @@ document.addEventListener('click',function(ev){
   else if(a==='borrar'){if(!borrarListo){borrarListo=true;pintaHoja();return}borrarListo=false;Store.borrar(p.id);hoja=null;pintaHoja();render();toast('Prospecto borrado.')}
 });
 document.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&(ev.target.id==='ac-pass'||ev.target.id==='ac-mail')){ev.preventDefault();enviarAcceso()}});
+document.addEventListener('toggle',function(ev){if(ev.target&&ev.target.id==='det-fil')BUS.verFiltros=ev.target.open},true);
 document.addEventListener('change',function(ev){
   if(ev.target.id!=='importar'||!ev.target.files[0])return;
   var fr=new FileReader();
@@ -695,7 +835,8 @@ document.addEventListener('change',function(ev){
 });
 document.addEventListener('input',function(ev){
   var t=ev.target,ds=t.dataset;
-  if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.resultados=null;render();return}
+  if(ds.fil){var ff=filtrosDe(canalActual());ff[ds.fil]=t.value;Store.meta();BUS.paso='';return}
+  if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.resultados=null;BUS.paso='';render();return}
   if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
   else if(ds.meta){var n=Math.round(Number(t.value));if(n>=1&&n<=30){S.meta.metaDiaria=n;Store.meta()}}
   else if(ds.nf&&hoja&&hoja.d){hoja.d[ds.nf]=t.value}
