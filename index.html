@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.5 (14 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 1.6 (14 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -383,6 +383,32 @@ function vValidacion(canal){
    '<ul class="senales">'+v.items.map(function(i){return '<li>'+(i.tipo==='alerta'?'⚠ ':i.tipo==='bien'?'✓ ':'')+esc(i.texto)+(i.fix?' <button class="btn suave" style="min-height:0;padding:4px 10px;font-size:.8rem" data-act="fil-fix" data-v="'+i.fix+'">Corregir</button>':'')+'</li>'}).join('')+'</ul>'+
    (v.items.some(function(i){return i.fix})?'<div><button class="btn suave" data-act="fil-todas">Aplicar todas las mejoras</button></div>':'')+'</div>';
 }
+
+/* ---------- Búsqueda gratis (el usuario busca en Google) ---------- */
+function sugerenciasGratis(){
+  var c=canalActual(),out=[],p=S.meta.perfil;
+  lineas(filtrosDe(c).busquedas).forEach(function(t){out.push(t)});
+  (S.meta.plan&&S.meta.plan.busquedas||[]).forEach(function(b){out.push(b.texto)});
+  comas(p.palabras).forEach(function(w){out.push((w+' '+(p.lugar||'')).trim())});
+  return out.map(function(t){return String(t||'').trim()}).filter(function(t,i,a){return t&&a.map(norm).indexOf(norm(t))===i}).slice(0,8);
+}
+function urlGratis(){
+  var q=String(BUS.gratis||'').trim();if(!q)return '';
+  var donde=BUS.gratisDonde||canalActual();
+  var pre=donde==='instagram'?'site:instagram.com ':donde==='linkedin'?'site:linkedin.com/in ':'';
+  var ex=comas(filtrosDe(canalActual()).excluir).slice(0,6).map(function(x){return ' -"'+x.replace(/"/g,'')+'"'}).join('');
+  return 'https://www.google.com/search?q='+encodeURIComponent(pre+q+ex);
+}
+function vGratis(){
+  var donde=BUS.gratisDonde||canalActual(),sug=sugerenciasGratis(),u=urlGratis();
+  return '<section class="sec"><h3>Búsqueda sin costo</h3><p class="nota">Escribe qué buscar o toca una sugerencia. Se abre Google en tu celular; tú eliges a quién agregar.</p><div class="panel">'+
+   (sug.length?'<span class="nota">Sugerencias</span><div class="fila">'+sug.map(function(t){return '<button class="btn suave" style="flex:0 1 auto;min-height:34px;padding:6px 12px;font-size:.85rem;font-weight:500;border-radius:999px" data-act="gratis-sug" data-v="'+esc(t)+'">'+esc(t)+'</button>'}).join('')+'</div>':'')+
+   '<label class="campo" for="gratis-q">Qué buscar<input type="text" id="gratis-q" data-gratis="1" value="'+esc(BUS.gratis||'')+'" placeholder="Por ejemplo: coach de vida México"></label>'+
+   '<div class="filtros" style="flex-wrap:wrap;overflow:visible" role="group" aria-label="Dónde buscar">'+[['instagram','Perfiles de Instagram'],['linkedin','Perfiles de LinkedIn'],['google','Toda la web']].map(function(o){return '<button data-act="gratis-donde" data-v="'+o[0]+'" aria-pressed="'+(donde===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
+   '<p class="costo">Se excluyen automáticamente las palabras de tu lista "Excluir".</p>'+
+   '<div><a class="btn" id="gratis-ir" style="display:inline-flex;align-items:center;text-decoration:none'+(u?'':';opacity:.55;pointer-events:none')+'" href="'+esc(u||'#')+'" target="_blank" rel="noopener">Buscar en Google</a></div>'+
+   '</div></section>';
+}
 function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
 async function buscarAuto(){
   if(!CFG.puente||!CFG.codigo){toast('Falta configurar el puente. Ve a Perfil → Conexión.');return}
@@ -607,12 +633,7 @@ function vEncontrar(){
   h+='<section class="sec"><h3>Canales, del mejor al peor</h3><div class="lista">'+pl.canales.map(function(c,i){
     return '<div class="panel canal"><span class="n">'+(i+1)+'</span><b>'+CANALES[c.canal]+'</b><span class="nota">'+esc(c.porque)+'</span></div>'}).join('')+'</div></section>';
   h+=vBusqueda();
-  h+='<section class="sec"><h3>Búsqueda gratis</h3><p class="nota">Sin costo: abre la búsqueda en tu celular, mira quién aparece y agrega solo a quien calce. '+(pl.tipo==='lugares'?'Buscas lugares: entra, observa quién pregunta y agrégala.':'')+'</p><div class="lista">'+
-    pl.busquedas.map(function(b,i){var ls=enlaces(b),hecha=S.meta.hechas[i]===hoy();
-      return '<div class="panel busq"><div class="fila" style="justify-content:space-between;align-items:center"><span class="chip">'+CANALES[b.canal]+'</span>'+(hecha?'<span class="hecha">Revisada hoy</span>':'')+'</div>'+
-        '<span class="txt">'+esc(b.texto)+'</span>'+(b.para?'<span class="nota">'+esc(b.para)+'</span>':'')+
-        (ls.length?'<div class="links">'+ls.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener" data-act="hecha" data-v="'+i+'">'+l[0]+'</a>'}).join('')+'</div>':
-          '<div><button class="btn suave" data-act="nuevo" data-v="whatsapp">Anotar a alguien</button></div>')+'</div>'}).join('')+'</div></section>';
+  h+=vGratis();
   h+='<section class="sec"><h3>Señales para reconocer a un buen prospecto</h3>'+DIMS.map(function(d){
     return '<div class="panel"><b>'+d[2]+'</b><ul class="senales">'+pl.senales[d[1]].map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ul></div>'}).join('')+'</section>';
   return h;
@@ -791,6 +812,8 @@ document.addEventListener('click',function(ev){
   if(a==='salir'){cerrarSesion();return}
   if(a==='bus-ir'){buscarAuto();return}
   if(a==='reintentar'){arrancar();return}
+  if(a==='gratis-sug'){BUS.gratis=v;render();return}
+  if(a==='gratis-donde'){BUS.gratisDonde=v;render();return}
   if(a==='bus-revisar'){BUS.paso='validar';render();return}
   if(a==='bus-volver'){BUS.paso='';BUS.verFiltros=true;render();return}
   if(a==='fil-proponer'){var c0=canalActual(),antes=JSON.stringify(filtrosDe(c0)),nuevo=proponerFiltros(c0);S.meta.filtros[c0]=nuevo;Store.meta();BUS.verFiltros=true;BUS.paso='';render();
@@ -840,6 +863,7 @@ document.addEventListener('change',function(ev){
 });
 document.addEventListener('input',function(ev){
   var t=ev.target,ds=t.dataset;
+  if(ds.gratis){BUS.gratis=t.value;var ga=$('#gratis-ir'),gu=urlGratis();if(ga){ga.href=gu||'#';ga.style.opacity=gu?'':'.55';ga.style.pointerEvents=gu?'':'none'}return}
   if(ds.fil){var ff=filtrosDe(canalActual());ff[ds.fil]=t.value;Store.meta();BUS.paso='';return}
   if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.resultados=null;BUS.paso='';render();return}
   if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
