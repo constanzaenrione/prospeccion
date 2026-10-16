@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.3 (16 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.6 (16 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -227,7 +227,7 @@ function digitos(t){return String(t||'').replace(/\D/g,'')}
 function waLink(p,txt){var d=digitos(p.telefono);return d.length>=8?'https://wa.me/'+d+(txt?'?text='+encodeURIComponent(txt):''):''}
 var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
 
-var S={meta:{perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:''},plan:null,hechas:{},metaDiaria:5},
+var S={meta:{perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:''},plan:null,hechas:{},metaDiaria:5},
        pros:{},tab:'hoy',filtro:'todos'};
 var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
 
@@ -261,7 +261,7 @@ var Store={colas:{},relojes:{},error:false,
     if(a.error)throw a.error;
     var p=await SB.from('pi_prospectos').select('id,data').eq('user_id',UID);
     if(p.error)throw p.error;
-    S.meta={perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:''},plan:null,hechas:{},metaDiaria:5};
+    S.meta={perfil:{oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:''},plan:null,hechas:{},metaDiaria:5};
     if(a.data&&a.data.data)ponMeta(a.data.data);
     var n={};(p.data||[]).forEach(function(r){var v=r.data||{};v.id=r.id;n[r.id]=normal(v)});S.pros=n;
     this.guardarLocal();
@@ -367,7 +367,7 @@ async function recuperarUltima(){
   try{
     var fi=filtrosDe('instagram');
     var r=await fetch(CFG.puente.replace(/\/$/,'')+'/ultima',{method:'POST',headers:await cabeceras(),
-      body:JSON.stringify({filtro:{minSeguidores:Number(fi.min)||0,maxSeguidores:Number(fi.max)||5000},excluir:comas(filtrosDe(canalActual()).excluir),perfilCliente:textoPerfilCliente()})});
+      body:JSON.stringify({filtro:filtroSeg(fi),excluir:comas(filtrosDe(canalActual()).excluir),perfilCliente:textoPerfilCliente()})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
     if(!d.canal){toast('No encontré búsquedas anteriores en Apify.')}
@@ -389,7 +389,7 @@ function textosPara(canal){
 function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function lineas(t){return String(t||'').split(/\n/).map(function(x){return x.trim()}).filter(Boolean)}
 function comas(t){return String(t||'').split(/[,;\n]/).map(function(x){return x.trim()}).filter(Boolean)}
-function esB2B(){var p=S.meta.perfil;return /jef|gerent|director|l[ií]der|ejecutiv|supervis|mandos|empresa|rrhh|recursos humanos|corporativ/.test(norm(p.cliente+' '+p.palabras+' '+(p.tipos||[]).join(' ')))}
+function esB2B(){var p=S.meta.perfil;return cats().indexOf('empresa')>-1||/jef|gerent|director|l[ií]der|ejecutiv|supervis|mandos|empresa|rrhh|recursos humanos|corporativ/.test(norm(p.cliente+' '+p.palabras+' '+(p.tipos||[]).join(' ')))}
 function proponerFiltros(canal){
   var p=S.meta.perfil,L=lugares(),b2b=esB2B();
   var roles=palabrasCliente();
@@ -403,7 +403,7 @@ function proponerFiltros(canal){
   var deOferta=['coaching','coach','mentoría','mentora','consultoría','capacitación','taller','terapia','asesoría'].filter(function(w){return norm(p.oferta).indexOf(norm(w))>-1});
   var cliente=norm(p.cliente+' '+p.palabras);
   var ex=[];exclusionesFicha().concat(base,deOferta).forEach(function(w){if(cliente.indexOf(norm(w))===-1&&ex.map(norm).indexOf(norm(w))===-1)ex.push(w)});
-  var rg=rangoSeguidores();return {busquedas:bus.join('\n'),excluir:ex.slice(0,14).join(', '),min:canal==='instagram'?rg[0]:'',max:canal==='instagram'?rg[1]:''};
+  var rg=rangoSeguidores();return {busquedas:bus.join('\n'),excluir:ex.slice(0,14).join(', '),min:canal==='instagram'&&usaSeguidores()?rg[0]:'',max:canal==='instagram'&&usaSeguidores()?rg[1]:''};
 }
 function filtrosDe(canal){
   if(!S.meta.filtros)S.meta.filtros={};
@@ -500,7 +500,7 @@ async function buscarAuto(){
   try{
     var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:await cabeceras(),
       body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
-        filtro:canal==='instagram'?{minSeguidores:Number(filtrosDe(canal).min)||0,maxSeguidores:Number(filtrosDe(canal).max)||5000}:null})});
+        filtro:canal==='instagram'?filtroSeg(filtrosDe(canal)):null})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
     BUS.resultados=ordenarPorSenales(d.resultados);BUS.resumen=d.resumen||null;BUS.marca={};BUS.abierto=-1;
@@ -526,7 +526,7 @@ function vFiltros(){
   return '<details'+(BUS.verFiltros?' open':'')+' style="display:flex;flex-direction:column;gap:10px" id="det-fil"><summary style="cursor:pointer;font-weight:600;color:var(--morado);padding:6px 0">Tus filtros para '+CANALES[c]+'</summary>'+
    '<label class="campo" for="fil-bus">Buscar<small>Una búsqueda por línea. Cargo o forma en que tu cliente se presenta, más el lugar.</small><textarea id="fil-bus" data-fil="busquedas">'+esc(f.busquedas)+'</textarea></label>'+
    '<label class="campo" for="fil-ex">Excluir<small>Palabras que NO quieres que aparezcan, separadas por coma (por ejemplo, quienes venden lo mismo que tú).</small><input type="text" id="fil-ex" data-fil="excluir" value="'+esc(f.excluir)+'"></label>'+
-   (c==='instagram'?'<div class="fila"><label class="campo" for="fil-min" style="flex:1 1 120px">Mínimo de seguidores<input type="number" inputmode="numeric" id="fil-min" data-fil="min" value="'+esc(f.min)+'"></label><label class="campo" for="fil-max" style="flex:1 1 120px">Máximo de seguidores<input type="number" inputmode="numeric" id="fil-max" data-fil="max" value="'+esc(f.max)+'"></label></div>':'')+
+   (c==='instagram'&&!usaSeguidores()?'<p class="nota">Para tu tipo de cliente los seguidores no importan, así que la app no los filtra.</p>':'')+(c==='instagram'&&usaSeguidores()?'<div class="fila"><label class="campo" for="fil-min" style="flex:1 1 120px">Mínimo de seguidores<input type="number" inputmode="numeric" id="fil-min" data-fil="min" value="'+esc(f.min)+'"></label><label class="campo" for="fil-max" style="flex:1 1 120px">Máximo de seguidores<input type="number" inputmode="numeric" id="fil-max" data-fil="max" value="'+esc(f.max)+'"><small>Vacío = sin límite</small></label></div>':'')+
    '<div><button class="btn sec2" data-act="fil-proponer">Proponer filtros según mi perfil</button></div></details>';
 }
 function vBusqueda(){
@@ -570,22 +570,52 @@ function insignia(p){var v=pts(p);return '<span class="pt '+temp(p)+'">'+(v<0?'S
 function pct(a,b){return b?Math.round(a/b*100)+'%':'—'}
 
 /* ---------- Ficha de cliente ideal ---------- */
-var TIPOS=[['coach-vida','Coach de vida',['coach de vida','coach ontológica']],['coach-otras','Coach (otras áreas)',['coach','coach certificada']],
-  ['terapeuta','Terapeuta holística',['terapeuta holística','terapias complementarias']],['reiki','Reiki y sanación',['reiki','sanación energética']],
-  ['psicologa','Psicóloga',['psicóloga','psicoterapeuta']],['yoga','Profesora de yoga o meditación',['profesora de yoga','meditación guiada']],
-  ['nutri','Nutricionista',['nutricionista','alimentación consciente']],['independiente','Profesional independiente',['independiente','consultas online']],
-  ['emprendedora','Emprendedora con producto',['emprendedora','hecho a mano']],['pyme','Dueña de pyme',['dueña de','fundadora']],
-  ['jefatura','Jefatura o gerencia',['jefe de área','gerente','supervisora']],['rrhh','Recursos humanos',['recursos humanos','gestión de personas']]];
-var MOMENTOS=[['empezando','Recién empezando','Pocas seguidoras, pocas clientas',[30,1500]],['creciendo','Tiene clientas, pero irregulares','Ya vende algo, no todos los meses',[300,5000]],
-  ['consolidada','Ya le va bien','Comunidad grande, busca crecer más',[3000,30000]]];
-var NO_QUIERO=[['organizaciones','Escuelas, fundaciones y organizaciones',['escuela','academia','fundación','asociación','federación','instituto']],
-  ['competencia','Mi competencia (hacen lo mismo que yo)',[]],['formadoras','Quienes forman o certifican a otras',['formación de coaches','certificación','escuela de coaching']],
-  ['productos','Tiendas o venta de productos',['tienda','envíos','catálogo']],['empleo','Personas buscando empleo',['busco empleo','open to work','estudiante']],
-  ['reclutadores','Reclutadores y consultoras',['reclutador','headhunter','consultora']]];
-var SI_SUG=['sesiones','agenda tu hora','online','cupos','primera sesión','acompaño','WhatsApp','consulta'];
+/* Ficha general: sirve para cualquier nicho. La categoría decide qué opciones se muestran. */
+var CATEGORIAS=[['independiente','Trabaja por su cuenta','Coach, terapeuta, profesional o emprendedora independiente'],
+  ['empresa','Trabaja en una empresa','Jefaturas, gerencias, líderes de equipo, RRHH'],
+  ['duena','Tiene su empresa o pyme','Dueña, fundadora o socia de un negocio con equipo'],
+  ['particular','Persona en su vida personal','Salud, pareja, crianza, cambios de vida']];
+var TIPOS=[['coach-vida','Coach de vida',['coach de vida','coach ontológica'],'independiente'],['coach-otras','Coach (otras áreas)',['coach','coach certificada'],'independiente'],
+  ['terapeuta','Terapeuta holística',['terapeuta holística','terapias complementarias'],'independiente'],['reiki','Reiki y sanación',['reiki','sanación energética'],'independiente'],
+  ['psicologa','Psicóloga',['psicóloga','psicoterapeuta'],'independiente'],['yoga','Profesora de yoga o meditación',['profesora de yoga','meditación guiada'],'independiente'],
+  ['nutri','Nutricionista',['nutricionista','alimentación consciente'],'independiente'],['independiente','Profesional independiente',['independiente','consultas online'],'independiente'],
+  ['emprendedora','Emprendedora con producto',['emprendedora','hecho a mano'],'independiente'],['consultora-ind','Consultora o asesora',['consultora','asesora'],'independiente'],
+  ['jefatura','Jefatura de área',['jefe de área','jefa de'],'empresa'],['gerencia','Gerencia',['gerente','gerenta'],'empresa'],['direccion','Dirección',['director','directora'],'empresa'],
+  ['lider','Líder de equipo',['líder de equipo','team leader'],'empresa'],['supervision','Supervisión o coordinación',['supervisora','coordinadora'],'empresa'],
+  ['rrhh','Recursos humanos',['recursos humanos','gestión de personas'],'empresa'],['ejecutiva','Ejecutiva o profesional senior',['ejecutiva','especialista senior'],'empresa'],
+  ['pyme','Dueña de pyme',['dueña de pyme','fundadora'],'duena'],['startup','Fundadora de startup',['founder','cofundadora'],'duena'],['comercio','Comercio o tienda',['tienda','local'],'duena'],
+  ['servicios','Empresa de servicios',['servicios','socia'],'duena'],
+  ['mama','Mamá o papá',['mamá de','crianza'],'particular'],['cambio','En una nueva etapa',['nueva etapa','reinventarme'],'particular'],
+  ['pareja','Busca mejorar su relación',['relación de pareja','vida en pareja'],'particular'],['bienestar','Busca bienestar o vida sana',['vida sana','bienestar'],'particular']];
+var MOMENTOS=[['empezando','Recién empezando','Pocas seguidoras, pocas clientas',[30,1500],'independiente'],['creciendo','Tiene clientas, pero irregulares','Ya vende algo, no todos los meses',[300,5000],'independiente'],
+  ['consolidada','Ya le va bien','Comunidad grande, busca crecer más',[3000,30000],'independiente'],
+  ['nuevo-cargo','Recién asumió un cargo','Primer tiempo liderando o en un rol nuevo',null,'empresa'],['equipo-dificil','Lidera un equipo con desafíos','Conflictos, rotación, baja motivación',null,'empresa'],
+  ['crecer','Quiere crecer o cambiar de rol','Busca desarrollo, ascenso o propósito',null,'empresa'],['sobrepasada','Está sobrepasada','Mucha carga, estrés, poco tiempo',null,'empresa'],
+  ['partiendo','Partiendo su empresa','Primeros clientes y primeras contrataciones',[30,3000],'duena'],['creciendo-eq','Creciendo con equipo','Ya delega, quiere ordenar y escalar',[300,10000],'duena'],
+  ['estancada','Estancada','Vende lo mismo hace tiempo',[300,10000],'duena'],
+  ['cambio-vida','Viviendo un cambio','Separación, mudanza, nueva etapa',[30,5000],'particular'],['mejorar','Quiere mejorar algo','Hábitos, relaciones, bienestar',[30,5000],'particular'],
+  ['dificil','En un momento difícil','Necesita apoyo pronto',[30,5000],'particular']];
+var NO_QUIERO=[['organizaciones','Escuelas, fundaciones y organizaciones',['escuela','academia','fundación','asociación','federación','instituto'],'*'],
+  ['competencia','Mi competencia (hacen lo mismo que yo)',[],'*'],['formadoras','Quienes forman o certifican a otras',['formación de coaches','certificación','escuela de coaching'],'independiente'],
+  ['productos','Tiendas o venta de productos',['tienda','envíos','catálogo'],'independiente particular'],['empleo','Personas buscando empleo',['busco empleo','open to work'],'empresa duena'],
+  ['estudiantes','Estudiantes y practicantes',['estudiante','práctica profesional'],'empresa particular'],['reclutadores','Reclutadores y consultoras',['reclutador','headhunter','consultora'],'empresa duena'],
+  ['grandes','Empresas muy grandes o multinacionales',['multinacional','corporación'],'duena']];
+var SI_POR_CAT={independiente:['sesiones','agenda tu hora','online','cupos','primera sesión','acompaño','consulta'],
+  empresa:['a cargo de','equipo de','liderazgo','gestión de personas','jefe de','gerente de','desarrollo organizacional'],
+  duena:['fundadora','dueña','emprendimiento','equipo','clientes','pyme'],
+  particular:['mamá','nueva etapa','bienestar','busco','aprendiendo']};
+/* Tipos de cliente y momentos: se pueden elegir varios */
+function cats(){var p=S.meta.perfil;if(Array.isArray(p.categorias)&&p.categorias.length)return p.categorias;if(p.categoria)return [p.categoria];
+  var r=[];tiposSel().forEach(function(t){if(r.indexOf(t[3])===-1)r.push(t[3])});return r}
+function categoria(){return cats()[0]||''}
+/* Los seguidores solo importan cuando el cliente se muestra en redes (no para jefaturas en empresas) */
+function usaSeguidores(){var C=cats();if(momentosSel().some(function(m){return m[3]}))return true;return !C.length||C.some(function(c){return c!=='empresa'})}
+function filtroSeg(f){return {minSeguidores:Number(f.min)||0,maxSeguidores:Number(f.max)||1000000000}}
+function momentosSel(){var p=S.meta.perfil;var ids=Array.isArray(p.momentos)?p.momentos:(p.momento?[p.momento]:[]);return MOMENTOS.filter(function(m){return ids.indexOf(m[0])>-1})}
+function deCategoria(arr,c){var C=c?[c]:cats();return arr.filter(function(x){var k=x[x.length-1];return k==='*'||!C.length||String(k).split(' ').some(function(y){return C.indexOf(y)>-1})})}
 function tiposSel(){return TIPOS.filter(function(t){return (S.meta.perfil.tipos||[]).indexOf(t[0])>-1})}
 function palabrasCliente(){var p=S.meta.perfil,w=comas(p.palabras);
-  if(!w.length)tiposSel().forEach(function(t){w.push(t[2][0])});
+  tiposSel().forEach(function(t){if(w.map(norm).indexOf(norm(t[2][0]))===-1)w.push(t[2][0])});
   comas(p.otrosTipos).forEach(function(x){if(w.map(norm).indexOf(norm(x))===-1)w.push(x)});return w}
 function lugares(){return comas(S.meta.perfil.lugar)}
 function exclusionesFicha(){var p=S.meta.perfil,ex=[];
@@ -596,19 +626,19 @@ function competenciaDe(oferta){var o=norm(oferta),r=[];
   if(/negocio|emprend|vend|factur|ventas/.test(o))r.push('mentora de negocios','coach de negocios','marketing digital');
   if(/coach/.test(o))r.push('escuela de coaching');if(/terap/.test(o))r.push('formación de terapeutas');
   if(/lideraz|equipo|organizacion/.test(o))r.push('consultora','capacitación');return r.length?r:['mentoría']}
-function rangoSeguidores(){var m=MOMENTOS.filter(function(x){return x[0]===S.meta.perfil.momento})[0];return m?m[3]:[50,5000]}
-function textoPerfilCliente(){var p=S.meta.perfil;return [p.cliente,p.palabras,tiposSel().map(function(t){return t[1]}).join(' '),p.otrosTipos].join(' ')}
+function rangoSeguidores(){var R=momentosSel().map(function(m){return m[3]}).filter(Boolean);if(!R.length)return [50,5000];return [Math.min.apply(null,R.map(function(r){return r[0]})),Math.max.apply(null,R.map(function(r){return r[1]}))]}
+function textoPerfilCliente(){var p=S.meta.perfil;return [p.cliente,p.palabras,cats().indexOf('empresa')>-1?'jefatura empresa':'',tiposSel().map(function(t){return t[1]}).join(' '),p.otrosTipos].join(' ')}
 function senalesSi(){return comas(S.meta.perfil.senalesSi)}
 function coincidencias(r){var t=norm((r.nombre||'')+' '+(r.bio||'')+' '+(r.categoria||''));return senalesSi().filter(function(w){return t.indexOf(norm(w))>-1})}
 function ordenarPorSenales(R){return (R||[]).map(function(r,i){return {r:r,i:i,n:coincidencias(r).length}}).sort(function(a,b){return b.n-a.n||a.i-b.i}).map(function(x){return x.r})}
-function avanceFicha(){var p=S.meta.perfil,ok=[!!String(p.oferta).trim(),(p.tipos||[]).length||!!String(p.otrosTipos).trim(),!!String(p.cliente).trim(),!!String(p.problema).trim(),
-  !!String(p.palabras).trim(),!!String(p.lugar).trim(),!!p.momento,!!String(p.senalesSi).trim(),(p.noQuiero||[]).length||!!String(p.noQuieroTxt).trim()];
+function avanceFicha(){var p=S.meta.perfil,ok=[!!String(p.oferta).trim(),cats().length>0&&((p.tipos||[]).length||!!String(p.otrosTipos).trim()),!!String(p.cliente).trim(),!!String(p.problema).trim(),
+  !!String(p.palabras).trim(),!!String(p.lugar).trim(),!!(momentosSel().length||String(p.momentoTxt||'').trim()),!!String(p.senalesSi).trim(),(p.noQuiero||[]).length||!!String(p.noQuieroTxt).trim()];
   return Math.round(ok.filter(Boolean).length/ok.length*100)}
 
 /* ---------- Radar ---------- */
 function contexto(){var p=S.meta.perfil;
   return 'NEGOCIO\nQué vende: '+p.oferta+'\nA quién ayuda: '+p.cliente+'\nProblema que resuelve: '+p.problema+
-  '\nTipo de cliente: '+tiposSel().map(function(t){return t[1]}).concat(comas(p.otrosTipos)).join(', ')+'\nMomento en que está: '+((MOMENTOS.filter(function(m){return m[0]===p.momento})[0]||['','sin definir'])[1])+'\nPalabras con que su cliente se describe: '+p.palabras+'\nSeñales de que SÍ es: '+(p.senalesSi||'sin definir')+'\nQuiénes NO son: '+exclusionesFicha().join(', ')+'\nLugar: '+p.lugar+'\nPrecio aproximado: '+(p.precio||'sin definir')+
+  '\nRol o profesión: '+tiposSel().map(function(t){return t[1]}).concat(comas(p.otrosTipos)).join(', ')+'\nTipo de cliente: '+(CATEGORIAS.filter(function(c){return cats().indexOf(c[0])>-1}).map(function(c){return c[1]}).join(', ')||'sin definir')+'\nMomento en que está: '+(momentosSel().map(function(m){return m[1]}).join(', ')||'sin definir')+(p.momentoTxt?' ('+p.momentoTxt+')':'')+'\nPalabras con que su cliente se describe: '+p.palabras+'\nSeñales de que SÍ es: '+(p.senalesSi||'sin definir')+'\nQuiénes NO son: '+exclusionesFicha().join(', ')+'\nLugar: '+p.lugar+'\nPrecio aproximado: '+(p.precio||'sin definir')+
   '\n¿Ya contactó a sus conocidos por WhatsApp?: '+(p.baseLista?'sí, a casi todos':'todavía no');}
 var SENALES_BASE={necesidad:['Habla del problema que tú resuelves','Pregunta o pide ayuda sobre el tema','Se nota que lo está intentando sola','Su situación calza con a quién ayudas'],
   afinidad:['Usa palabras parecidas a las tuyas','Comparte un estilo o valores cercanos','Está en tu país o habla tu idioma','Tienen conocidos o intereses en común'],
@@ -841,24 +871,28 @@ function campo(k,et,ayuda,area){var v=S.meta.perfil[k];
   return '<label class="campo" for="pf-'+k+'">'+et+(ayuda?'<small>'+ayuda+'</small>':'')+(area?'<textarea id="pf-'+k+'" data-f="'+k+'">'+esc(v)+'</textarea>':'<input type="text" id="pf-'+k+'" data-f="'+k+'" value="'+esc(v)+'">')+'</label>'}
 function opcs(campo,arr,multi){var v=S.meta.perfil[campo];
   return '<div class="opcs">'+arr.map(function(o){var on=multi?(v||[]).indexOf(o[0])>-1:v===o[0];
-    return '<button type="button" class="opc" aria-pressed="'+on+'" data-act="ficha" data-c="'+campo+'" data-v="'+o[0]+'"'+(multi?' data-multi="1"':'')+'>'+esc(o[1])+(o[2]&&!multi&&typeof o[2]==='string'?'<br><small style="opacity:.8">'+esc(o[2])+'</small>':'')+'</button>'}).join('')+'</div>'}
+    return '<button type="button" class="opc" aria-pressed="'+on+'" data-act="ficha" data-c="'+campo+'" data-v="'+o[0]+'"'+(multi?' data-multi="1"':'')+'>'+esc(o[1])+(o[2]&&typeof o[2]==='string'&&(!multi||campo==='categorias'||campo==='momentos')?'<br><small style="opacity:.8">'+esc(o[2])+'</small>':'')+'</button>'}).join('')+'</div>'}
 function sugPalabras(campo,lista){var ya=comas(S.meta.perfil[campo]).map(norm);var q=lista.filter(function(w){return ya.indexOf(norm(w))===-1});
   return q.length?'<div class="opcs">'+q.slice(0,10).map(function(w){return '<button type="button" class="opc" data-act="ficha-add" data-c="'+campo+'" data-v="'+esc(w)+'">+ '+esc(w)+'</button>'}).join('')+'</div>':''}
 function bloque(n,t,nota,html){return '<div class="bloque"><h3><span class="paso-n">'+n+'</span>'+t+'</h3>'+(nota?'<p class="nota" style="margin:0">'+nota+'</p>':'')+html+'</div>'}
 function vPerfil(){
   var p=S.meta.perfil,pl=S.meta.plan,av=avanceFicha();
-  var sugBio=[];tiposSel().forEach(function(t){t[2].forEach(function(w){sugBio.push(w)})});
+  var sugBio=[];tiposSel().forEach(function(t){t[2].forEach(function(w){sugBio.push(w)})});var C=cats(),cat=C[0]||'';
+  var sugSi=[];(C.length?C:['independiente']).forEach(function(c){(SI_POR_CAT[c]||[]).forEach(function(w){if(sugSi.indexOf(w)===-1)sugSi.push(w)})});
   return '<section class="sec"><span class="eyebrow">Perfil</span><h2>Tu cliente ideal</h2><p class="nota">Mientras más clara tu ficha, menos perfiles que no sirven. La app arma tus búsquedas y filtros con esto.</p>'+
    '<div class="fila" style="justify-content:space-between;align-items:center"><b>Tu ficha está al '+av+'%</b><span class="nota">'+(av>=90?'¡Lista para buscar!':av>=60?'Vas muy bien':'Completa un poco más')+'</span></div><div class="avance"><i style="width:'+av+'%"></i></div></section>'+
    '<section class="sec" style="gap:14px">'+
    bloque(1,'Tu oferta','',campo('oferta','¿Qué vendes?','Tu servicio, en una frase.',true)+campo('precio','Precio aproximado','Opcional. Ayuda a medir si te puede pagar.'))+
-   bloque(2,'¿Quién es tu cliente?','Toca todas las que correspondan.',opcs('tipos',TIPOS,true)+campo('otrosTipos','¿Otra profesión o rol?','Escríbela si no aparece arriba. Separa con comas.'))+
-   bloque(3,'¿En qué momento está?','Así la app sabe qué tamaño de cuenta buscar.',opcs('momento',MOMENTOS,false))+
+   bloque(2,'¿Quién es tu cliente?','Primero elige el tipo de cliente. Puedes marcar más de uno. Las opciones de abajo cambian según tu elección.',opcs('categorias',CATEGORIAS,true)+
+     (cat?'<b style="font-size:.9rem;font-weight:500">¿Qué rol o profesión tiene? <span class="nota">Toca todas las que correspondan.</span></b>'+opcs('tipos',deCategoria(TIPOS),true):'')+
+     campo('otrosTipos','¿Otro rol, profesión o rubro?','Escríbelo si no aparece. Separa con comas.'+(C.indexOf('empresa')>-1||C.indexOf('duena')>-1?' Puedes sumar la industria, ej: minería, salud, retail.':'')))+
+   bloque(3,'¿En qué momento está?',cat?'Marca todos los que te interesen. Así la app afina la búsqueda y tus mensajes.':'Elige primero el tipo de cliente en el paso 2.',cat?C.map(function(c){
+       return (C.length>1?'<b style="font-size:.9rem;font-weight:600;color:var(--morado)">'+esc((CATEGORIAS.filter(function(x){return x[0]===c})[0]||['',''])[1])+'</b>':'')+opcs('momentos',deCategoria(MOMENTOS,c),true)}).join('')+campo('momentoTxt','¿Otro momento?','Opcional. Descríbelo con tus palabras.'):'')+
    bloque(4,'Cómo es y qué le duele','',campo('cliente','Descríbela como persona','Quién es, qué hace, qué quiere lograr.',true)+campo('problema','¿Qué problema le resuelves?','Como lo diría ella.',true))+
-   bloque(5,'¿Cómo se presenta en su perfil?','Las palabras que pondría en su bio. Son las que la app busca.',campo('palabras','Palabras de su bio','Separa con comas. Ej: terapeuta holística, reiki, constelaciones.')+sugPalabras('palabras',sugBio))+
+   bloque(5,'¿Cómo se presenta en su perfil?','Las palabras que pondría en su bio. Son las que la app busca.',campo('palabras','Palabras de su bio o de su cargo','Separa con comas. Ej: jefa de proyectos, coach de vida, terapeuta holística.')+sugPalabras('palabras',sugBio))+
    bloque(6,'¿Dónde está?','',campo('lugar','País o ciudad','Puedes poner varios separados con comas. Ej: Chile, Argentina, México.'))+
-   bloque(7,'Señales de que SÍ es ella','Si su perfil dice esto, la app la pone primero y te lo marca.',campo('senalesSi','Palabras que te dicen que sí','Ej: sesiones, agenda tu hora, online, cupos.')+sugPalabras('senalesSi',SI_SUG))+
-   bloque(8,'¿Quién NO es?','La app los saca antes de mostrártelos.',opcs('noQuiero',NO_QUIERO,true)+campo('noQuieroTxt','Otras palabras que no quieres ver','Separa con comas.'))+
+   bloque(7,'Señales de que SÍ es ella','Si su perfil dice esto, la app la pone primero y te lo marca.',campo('senalesSi','Palabras que te dicen que sí','Separa con comas.')+sugPalabras('senalesSi',sugSi))+
+   bloque(8,'¿Quién NO es?','La app los saca antes de mostrártelos.',opcs('noQuiero',deCategoria(NO_QUIERO),true)+campo('noQuieroTxt','Otras palabras que no quieres ver','Separa con comas.'))+
    '<label class="check" for="pf-base"><input type="checkbox" id="pf-base" data-f="baseLista"'+(p.baseLista?' checked':'')+'><span>Ya contacté a casi todos mis conocidos por WhatsApp</span></label>'+
    '<label class="campo" for="pf-meta">Mensajes por día<small>Tu tope diario. Pocos y bien elegidos.</small><input type="number" id="pf-meta" data-meta="1" min="1" max="30" inputmode="numeric" value="'+esc(S.meta.metaDiaria)+'"></label>'+
    '<div><button class="btn" data-act="plan"'+(ocupada==='plan'?' disabled':'')+'>'+(ocupada==='plan'?'Pensando…':pl?'Guardar y actualizar mis búsquedas':'Crear mi radar')+'</button></div>'+
@@ -1076,8 +1110,12 @@ document.addEventListener('click',function(ev){
     lista().forEach(function(p){if(p.estado===q.id){p.estado=ant;Store.pro(p);nq++}});M3.splice(i3,1);Store.meta();pintaHoja();toast(nq?nq+' persona(s) pasaron a "'+nombreEtapa(ant)+'".':'Paso quitado.')}
   else if(a==='plan'){S.meta.filtros={};crearPlan()}
   else if(a==='ficha'){var pf=S.meta.perfil,c=b.dataset.c;
+    if(c==='categorias')pf.categorias=cats().slice();
+    if(c==='momentos'){pf.momentos=momentosSel().map(function(m){return m[0]});pf.momento=''}
     if(b.dataset.multi){var arr=(pf[c]||[]).slice(),k=arr.indexOf(v);if(k>-1)arr.splice(k,1);else arr.push(v);pf[c]=arr}
     else pf[c]=pf[c]===v?'':v;
+    if(c==='categorias'){pf.categoria='';pf.tipos=(pf.tipos||[]).filter(function(id){var t=TIPOS.filter(function(x){return x[0]===id})[0];return t&&pf.categorias.indexOf(t[3])>-1});
+      pf.momentos=(pf.momentos||[]).filter(function(id){var m=MOMENTOS.filter(function(x){return x[0]===id})[0];return m&&pf.categorias.indexOf(m[4])>-1});pf.momento=''}
     Store.meta();render()}
   else if(a==='ficha-add'){var pf2=S.meta.perfil,c2=b.dataset.c,l2=comas(pf2[c2]);l2.push(v);pf2[c2]=l2.join(', ');Store.meta();render()}
   else if(a==='hecha'){S.meta.hechas[v]=hoy();Store.meta();setTimeout(render,400)}
