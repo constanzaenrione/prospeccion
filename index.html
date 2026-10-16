@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.2 (16 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.3 (16 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -235,7 +235,12 @@ var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
 var CFG_LS='pi-conexion';
 function leerCfg(){try{return JSON.parse(localStorage.getItem(CFG_LS)||'null')}catch(e){return null}}
 function guardarCfg(c){try{localStorage.setItem(CFG_LS,JSON.stringify(c))}catch(e){}}
-var CFG=leerCfg()||{sbUrl:'',sbKey:'',puente:'https://puente-prospeccion.conyenrione.workers.dev',codigo:''};
+/* Conexión fija: las personas solo escriben su correo y contraseña */
+var CONEXION={sbUrl:'https://zcovuvkqsmnedfnevmpm.supabase.co',sbKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpjb3Z1dmtxc21uZWRmbmV2bXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NDUyOTIsImV4cCI6MjA5ODQyMTI5Mn0.1VXulShYlMcTsqUgSicfzOzsVS8tS4rLD_gpgn31cPo',puente:'https://puente-prospeccion.conyenrione.workers.dev'};
+function conexionFija(){return !/^__/.test(CONEXION.sbUrl)&&!/^__/.test(CONEXION.sbKey)}
+var CFG=conexionFija()?{sbUrl:CONEXION.sbUrl,sbKey:CONEXION.sbKey,puente:CONEXION.puente,codigo:''}:(leerCfg()||{sbUrl:'',sbKey:'',puente:CONEXION.puente,codigo:''});
+async function cabeceras(){var h={'content-type':'application/json'};if(CFG.codigo)h['x-codigo']=CFG.codigo;
+  try{var s=await SB.auth.getSession();if(s.data&&s.data.session)h.authorization='Bearer '+s.data.session.access_token}catch(e){}return h}
 var SB=null, UID=null;
 
 /* ---------- Guardado en Supabase ---------- */
@@ -283,13 +288,13 @@ function pantallaLogin(){
   mostrarApp(false);
   var crear=acceso.modo==='crear';
   $('#acceso').innerHTML='<span class="eyebrow">Prospección Inteligente</span><h2>'+(crear?'Crear tu cuenta':'Entrar a tu cuenta')+'</h2>'+
-   '<div class="selector" role="group" aria-label="Tipo de acceso"><button data-act="ac-modo" data-v="entrar" aria-pressed="'+!crear+'">Ya tengo cuenta</button><button data-act="ac-modo" data-v="crear" aria-pressed="'+crear+'">Soy nueva</button></div>'+
-   '<p class="nota">'+(crear?'Crea tu cuenta una sola vez. Después entra siempre con "Ya tengo cuenta".':'Usa el mismo correo y contraseña con que creaste tu cuenta.')+'</p>'+
+   (conexionFija()?'':'<div class="selector" role="group" aria-label="Tipo de acceso"><button data-act="ac-modo" data-v="entrar" aria-pressed="'+!crear+'">Ya tengo cuenta</button><button data-act="ac-modo" data-v="crear" aria-pressed="'+crear+'">Soy nueva</button></div>')+
+   '<p class="nota">'+(crear?'Crea tu cuenta una sola vez. Después entra siempre con "Ya tengo cuenta".':'Entra con el correo y la contraseña que te entregaron.')+'</p>'+
    '<label class="campo" for="ac-mail">Correo<input type="email" id="ac-mail" autocomplete="email" inputmode="email"></label>'+
    '<label class="campo" for="ac-pass">Contraseña<small>'+(crear?'Mínimo 6 caracteres.':'')+'</small><input type="password" id="ac-pass" autocomplete="'+(crear?'new-password':'current-password')+'"></label>'+
    (acceso.msg?'<p class="error">'+esc(acceso.msg)+'</p>':'')+
    '<div><button class="btn" data-act="ac-enviar"'+(acceso.cargando?' disabled':'')+'>'+(acceso.cargando?'Un momento…':crear?'Crear mi cuenta':'Entrar')+'</button></div>'+
-   '<button class="btn sec2" data-act="ac-conexion" style="align-self:flex-start;min-height:0;padding:8px 12px;font-size:.85rem">Cambiar conexión</button>';
+   (conexionFija()?'':'<button class="btn sec2" data-act="ac-conexion" style="align-self:flex-start;min-height:0;padding:8px 12px;font-size:.85rem">Cambiar conexión</button>');
 }
 async function enviarAcceso(){
   var mail=$('#ac-mail').value.trim(),pass=$('#ac-pass').value;
@@ -357,11 +362,11 @@ function restaurarUltima(){
   BUS.resumen=u.resumen?{encontrados:u.resumen.encontrados,descartados:new Array(u.resumen.descartados||0)}:null;
 }
 async function recuperarUltima(){
-  if(!CFG.puente||!CFG.codigo){toast('Falta configurar el puente. Ve a Perfil → Conexión.');return}
+  if(!CFG.puente){toast('Falta la dirección del puente de búsqueda.');return}
   BUS.recuperando=true;BUS.error='';render();
   try{
     var fi=filtrosDe('instagram');
-    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/ultima',{method:'POST',headers:{'content-type':'application/json','x-codigo':CFG.codigo},
+    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/ultima',{method:'POST',headers:await cabeceras(),
       body:JSON.stringify({filtro:{minSeguidores:Number(fi.min)||0,maxSeguidores:Number(fi.max)||5000},excluir:comas(filtrosDe(canalActual()).excluir),perfilCliente:textoPerfilCliente()})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
@@ -487,13 +492,13 @@ function vGratis(){
 }
 function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
 async function buscarAuto(){
-  if(!CFG.puente||!CFG.codigo){toast('Falta configurar el puente. Ve a Perfil → Conexión.');return}
+  if(!CFG.puente){toast('Falta la dirección del puente de búsqueda.');return}
   var canal=BUS.canal||((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||'instagram');
   var textos=textosPara(canal);
   if(!textos.length){toast('Primero completa tu cliente ideal en Perfil.');return}
   BUS.canal=canal;BUS.paso='';BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
   try{
-    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:{'content-type':'application/json','x-codigo':CFG.codigo},
+    var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:await cabeceras(),
       body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
         filtro:canal==='instagram'?{minSeguidores:Number(filtrosDe(canal).min)||0,maxSeguidores:Number(filtrosDe(canal).max)||5000}:null})});
     var d=await r.json().catch(function(){return {}});
@@ -859,8 +864,9 @@ function vPerfil(){
    '<div><button class="btn" data-act="plan"'+(ocupada==='plan'?' disabled':'')+'>'+(ocupada==='plan'?'Pensando…':pl?'Guardar y actualizar mis búsquedas':'Crear mi radar')+'</button></div>'+
    (pl?'<p class="nota">Radar creado el '+esc(pl.creado)+'. Al actualizar, tus búsquedas y filtros se rehacen con tu ficha nueva.</p>':'')+
    '</section><section class="sec"><h3>Cuenta y conexión</h3><div class="panel">'+
-   '<p>Conectada como <b>'+esc(EMAIL)+'</b></p><p class="nota">Puente de búsqueda: '+(CFG.codigo?'configurado':'falta el código de acceso')+'.</p>'+
-   '<div class="fila"><button class="btn sec2" data-act="ac-conexion">Cambiar conexión</button><button class="btn sec2" data-act="salir">Cerrar sesión</button></div>'+
+   '<p>Conectada como <b>'+esc(EMAIL)+'</b></p>'+
+   '<label class="campo" for="nueva-clave">Cambiar mi contraseña<small>Mínimo 6 caracteres.</small><input type="password" id="nueva-clave" autocomplete="new-password"></label>'+
+   '<div class="fila"><button class="btn sec2" data-act="cambiar-clave">Guardar contraseña nueva</button>'+(conexionFija()?'':'<button class="btn sec2" data-act="ac-conexion">Cambiar conexión</button>')+'<button class="btn sec2" data-act="salir">Cerrar sesión</button></div>'+
    '<label class="campo" for="importar">Importar datos<small>Para traer prospectos desde un archivo de respaldo (.json).</small><input type="file" id="importar" accept=".json,application/json"></label>'+
    '</div>'+
    '</section>';
@@ -1035,6 +1041,8 @@ document.addEventListener('click',function(ev){
   if(a==='ac-enviar'){enviarAcceso();return}
   if(a==='ac-conexion'){acceso.msg='';pantallaConexion();return}
   if(a==='salir'){cerrarSesion();return}
+  if(a==='cambiar-clave'){var nc=($('#nueva-clave')||{}).value||'';if(nc.length<6){toast('La contraseña necesita al menos 6 caracteres.');return}
+    SB.auth.updateUser({password:nc}).then(function(r){if(r.error)throw r.error;$('#nueva-clave').value='';toast('Listo, tu contraseña nueva quedó guardada.')}).catch(function(){toast('No se pudo cambiar. Inténtalo de nuevo.')});return}
   if(a==='bus-ir'){buscarAuto();return}
   if(a==='reintentar'){arrancar();return}
   if(a==='bus-recuperar'){recuperarUltima();return}
