@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.8 (16 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.9 (20 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -356,13 +356,13 @@ function registro(){if(!Array.isArray(S.meta.busquedas))S.meta.busquedas=[];retu
 function guardarUltima(){
   if(!BUS.resultados)return;
   S.meta.ultima={canal:BUS.canal,fecha:hoy(),resultados:BUS.resultados,marca:BUS.marca||{},reg:BUS.reg||null,
-    resumen:BUS.resumen?{encontrados:BUS.resumen.encontrados||0,descartados:(BUS.resumen.descartados||[]).length}:null};
+    resumen:BUS.resumen?{encontrados:BUS.resumen.encontrados||0,descartados:(BUS.resumen.descartados||[]).slice(0,80),reglas:BUS.resumen.reglas||null}:null};
   Store.meta();
 }
 function restaurarUltima(){
   var u=S.meta.ultima;if(!u||BUS.resultados||!Array.isArray(u.resultados))return;
   BUS.canal=u.canal||BUS.canal;BUS.resultados=u.resultados;BUS.marca=u.marca||{};BUS.reg=u.reg||null;BUS.fechaRes=u.fecha;
-  BUS.resumen=u.resumen?{encontrados:u.resumen.encontrados,descartados:new Array(u.resumen.descartados||0)}:null;
+  BUS.resumen=u.resumen?{encontrados:u.resumen.encontrados,descartados:Array.isArray(u.resumen.descartados)?u.resumen.descartados:new Array(u.resumen.descartados||0),reglas:u.resumen.reglas||null}:null;
 }
 async function recuperarUltima(){
   if(!CFG.puente){toast('Falta la dirección del puente de búsqueda.');return}
@@ -381,6 +381,11 @@ async function recuperarUltima(){
 }
 function regActual(){var id=BUS.reg;return registro().filter(function(b){return b.id===id})[0]||null}
 function canalesAuto(){return ['instagram','linkedin','google']}
+/* Búsquedas que realmente se envían: nunca de una sola palabra (traen marcas y cuentas al azar) */
+function busquedasListas(canal){var L=lugares(),T=textosPara(canal);
+  return T.map(function(t,i){var w=String(t).trim().split(/\s+/).filter(Boolean);
+    if(w.length<2&&L.length&&!L.some(function(x){return norm(t).indexOf(norm(x))>-1}))return (t+' '+L[i%L.length]).trim();return String(t).trim()})}
+function busquedasMalas(canal){return busquedasListas(canal).filter(function(t){return t.split(/\s+/).filter(Boolean).length<2})}
 function textosPara(canal){
   var fl=lineas(filtrosDe(canal).busquedas);if(fl.length)return fl.slice(0,5);
   var pl=S.meta.plan,p=S.meta.perfil;
@@ -429,7 +434,7 @@ function validarBusqueda(canal){
   var largas=B.filter(function(b){return b.split(/\s+/).length>6});
   if(largas.length)add('mejora',largas.length+' búsqueda(s) con más de 6 palabras: mientras más larga, menos resultados.','acortar',10);
   var cortas=B.filter(function(b){return b.split(/\s+/).length<2});
-  if(cortas.length)add('mejora',cortas.length+' búsqueda(s) de una sola palabra: traen cuentas grandes o famosas, no a tu cliente.','agregar-lugar',10);
+  if(cortas.length)add('alerta',cortas.length+' búsqueda(s) de una sola palabra: traen marcas y cuentas al azar, no a tu cliente.','agregar-lugar',35);
   if(LG.length){var sinLugar=B.filter(function(b){return !LG.some(function(x){return norm(b).indexOf(x)>-1})});
     if(sinLugar.length)add('mejora',sinLugar.length+' búsqueda(s) sin país o ciudad: puede traer gente de otros países.','agregar-lugar',10)}
   else add('mejora','No indicaste país o ciudad en tu perfil. Agregarlo enfoca mucho la búsqueda.','',5);
@@ -493,11 +498,18 @@ function vGratis(){
    '<div><a class="btn" id="gratis-ir" style="display:inline-flex;align-items:center;text-decoration:none'+(u?'':';opacity:.55;pointer-events:none')+'" href="'+esc(u||'#')+'" target="_blank" rel="noopener">Buscar en Google</a></div>'+
    '</div></section>';
 }
+function vDescartados(){var r=BUS.resumen;if(!r||!r.descartados||!r.descartados.length)return '';
+  var D=r.descartados.filter(function(x){return typeof x==='string'}),gratis=D.filter(function(x){return /sin costo/.test(x)}).length,leidos=D.length-gratis;
+  return '<p class="nota">Se revisaron '+(r.encontrados||'')+' perfiles y se descartaron '+r.descartados.length+'.'+(r.reglas&&r.reglas.porRegla?' '+r.reglas.porRegla+' los frenaron las reglas de la app.':'')+'</p>'+
+    (D.length?'<details class="grp"><summary>Ver descartados y por qué <span class="cnt">'+D.length+'</span></summary>'+
+    '<p class="nota">'+(gratis?gratis+' se descartaron sin costo, antes de abrirlos. ':'')+(leidos?leidos+' se descartaron después de leer su perfil: esos sí se cobran (centavos).':'')+'</p>'+
+    '<ul class="senales">'+D.map(function(x){var m=/^@([\w.]+)/.exec(x);return '<li>'+(m?'<a href="https://www.instagram.com/'+esc(m[1])+'/" target="_blank" rel="noopener">@'+esc(m[1])+'</a>'+esc(x.slice(m[0].length)):esc(x))+'</li>'}).join('')+'</ul></details>':'')}
 function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
 async function buscarAuto(){
   if(!CFG.puente){toast('Falta la dirección del puente de búsqueda.');return}
   var canal=BUS.canal||((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||'instagram');
-  var textos=textosPara(canal);
+  var textos=busquedasListas(canal);
+  if(busquedasMalas(canal).length){BUS.paso='validar';render();toast('Hay búsquedas de una sola palabra. Agrega más palabras o tu país antes de buscar.');return}
   if(!textos.length){toast('Primero completa tu cliente ideal en Perfil.');return}
   BUS.canal=canal;BUS.paso='';BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
   try{
@@ -535,17 +547,21 @@ function vFiltros(){
 function vBusqueda(){
   canalActual();var opc=canalesAuto().map(function(c){return '<option value="'+c+'"'+(BUS.canal===c?' selected':'')+'>'+CANALES[c]+'</option>'}).join('');
   var h='<section class="sec"><h3>Búsqueda automática</h3><p class="nota">La app busca por ti y te trae perfiles listos para revisar. Usa tu crédito de Apify.</p>'+
+   '<p class="nota">Buscando para el perfil: <b>'+esc(perfilAct().nombre)+'</b>'+(perfilesL().length>1?' (cámbialo arriba)':'')+'</p>'+
    '<div class="panel">'+
    '<div class="fila"><label class="campo" for="bus-canal" style="flex:1 1 140px">Dónde<select id="bus-canal" data-bus="canal">'+opc+'</select></label>'+
    '<label class="campo" for="bus-cant" style="flex:1 1 120px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
    vFiltros()+'<p class="costo">'+(regActual()&&regActual().costo?'Esta búsqueda costó US$'+regActual().costo.toFixed(3)+'. ':'')+'Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
-   (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+'<div class="fila"><button class="btn" data-act="bus-ir">Buscar así</button><button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
+   (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+
+     '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
+     (busquedasMalas(canalActual()).length?'<p class="error">Una sola palabra trae marcas, gimnasios y cuentas al azar, y igual se cobra. Escribe búsquedas de 2 a 4 palabras (ej: "coach de vida Chile") o agrega tu país en Mi cliente.</p>':'')+'</div>'+
+     '<div class="fila">'+(busquedasMalas(canalActual()).length?'':'<button class="btn" data-act="bus-ir">Buscar así</button>')+'<button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
      :'<div class="fila"><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button>'+(BUS.resultados?'':'<button class="btn sec2" data-act="bus-recuperar"'+(BUS.recuperando?' disabled':'')+'>'+(BUS.recuperando?'Recuperando…':'Recuperar última búsqueda')+'</button>')+'</div>')+
    (BUS.error?'<p class="error">'+esc(BUS.error)+'</p>':'')+'</div></section>';
   if(BUS.resultados){
     var R=BUS.resultados;
     h+='<section class="sec"><h3>'+R.length+' encontrados en '+CANALES[BUS.canal]+'</h3>'+(BUS.fechaRes?'<p class="nota">Búsqueda del '+esc(BUS.fechaRes)+'. Quedan guardados hasta tu próxima búsqueda.</p>':'')+
-      (BUS.resumen&&BUS.resumen.descartados?'<p class="nota">Se revisaron '+BUS.resumen.encontrados+' perfiles y se descartaron '+BUS.resumen.descartados.length+(BUS.resumen.reglas&&BUS.resumen.reglas.porRegla?' ('+BUS.resumen.reglas.porRegla+' gracias a las reglas de la app, aunque tus filtros no los hubieran frenado)':' (organizaciones o cuentas muy grandes)')+'.</p>':'')+
+      vDescartados()+
       (R.length?'<div class="fila"><button class="btn suave" data-act="bus-todos-despues">Guardar todos para revisar después</button></div>':'<p class="nota">Esta vez no apareció nadie que calce. Prueba otro canal o cambia las búsquedas en tu perfil.</p>')+
       '<div class="lista">'+R.map(function(r,i){var esta=yaEsta(r);
         var mk=BUS.marca[i]||'';
