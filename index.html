@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.7 (21 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 4.0 (21 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -556,6 +556,12 @@ function rutasPerfil(){
   RUTAS_MENTORA.filter(function(r){return r.activa!==false&&(!r.nicho||r.nicho==='*'||C.indexOf(r.nicho)>-1)}).forEach(function(r){R.push({id:'m'+r.id,ico:'★',titulo:r.titulo,que:r.que||'',meta:'Guarda 3',url:rellenar(r.url),mentora:true})});
   // Cada ruta automática se arma desde un "texto de búsqueda" que la persona puede editar
   var A=[];
+  var DOC={cl:'doctoralia.cl',mx:'doctoralia.com.mx',co:'doctoralia.co',pe:'doctoralia.pe',es:'doctoralia.es'},PS=paisesBus();
+  if(indep&&PS.indexOf('cl')>-1){
+    A.push({id:'crono',ico:'DIR',titulo:'Cronoshare',q:q,que:function(t){return 'Profesionales de "'+t+'". Fíjate en "contratado X veces": pocas veces = está partiendo.'},meta:'Guarda 5',arma:function(t){return g('site:cronoshare.cl '+t)}});
+    A.push({id:'2x3',ico:'DIR',titulo:'2x3.cl',q:q,que:function(t){return 'Fichas de profesionales de "'+t+'" con servicios y precios.'},meta:'Guarda 3',arma:function(t){return g('site:2x3.cl '+t)}})}
+  var docs=PS.filter(function(c){return DOC[c]});
+  if(indep&&docs.length)A.push({id:'docto',ico:'DIR',titulo:'Doctoralia',q:q,que:function(t){return 'Terapeutas y coaches de "'+t+'" con ficha propia.'},meta:'Guarda 3',arma:function(t){return g('('+docs.map(function(c){return 'site:'+DOC[c]}).join(' OR ')+') '+t)}});
   if(indep||due)A.push({id:'maps',ico:'MAPS',titulo:'Google Maps',q:q,que:function(t){return 'Fichas de "'+t+'" con teléfono, web o WhatsApp.'},meta:'Guarda 5',arma:function(t){return 'https://www.google.com/maps/search/'+encodeURIComponent(t)}});
   if(indep||due||par)A.push({id:'ig',ico:'IG',titulo:'Perfiles de Instagram',q:q,que:function(t){return 'Personas que se presentan como "'+t+'".'},meta:'Guarda 5',arma:function(t){return g('site:instagram.com '+t+' -inurl:/p/ -inurl:/reel/'+ex)}});
   if(indep&&tag)A.push({id:'tag',ico:'#',titulo:'Hashtag',q:tag,que:function(t){return 'Publicaciones recientes con #'+aHashtag(t)+': mira quién las publica.'},meta:'Guarda 3',arma:function(t){return 'https://www.instagram.com/explore/tags/'+aHashtag(t)+'/'}});
@@ -586,6 +592,8 @@ function vGratis(){
   var h='<section class="sec"><p class="nota">Sin costo. Abre una ruta, mira, y pega aquí los perfiles que te gusten. La app los ordena y los deja listos para seguir. Perfil: <b>'+esc(perfilAct().nombre)+'</b></p>'+
    '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b>Tu sesión de hoy</b><span class="nota"><b style="color:var(--morado)">'+n+'</b> de 10 guardados</span></div>'+
    '<div class="avance"><i style="width:'+Math.min(100,n*10)+'%"></i></div><div><button class="btn" data-act="gr-guardar">+ Guardar rápido</button></div></div></section>'+
+   '<section class="sec"><div class="panel" style="display:flex;flex-direction:column;gap:8px"><b>🤖 Busca con tu propia IA</b><p class="nota" style="margin:0">La app arma un prompt con tu perfil. Lo pegas en tu IA (con búsqueda web activada), descargas el archivo que te entrega y lo subes aquí.</p>'+
+     '<div class="fila"><button class="btn sec2" data-act="ia-copiar">1. Copiar prompt para mi IA</button><button class="btn" data-act="ia-pegar">2. Subir resultado de mi IA</button></div><div><button type="button" class="ba" data-act="ia-ajustar">Ver y ajustar mi prompt</button></div></div></section>'+
    '<section class="sec"><h3>Rutas para encontrar a tu cliente</h3><div class="lista">'+R.map(function(r){var c=COLOR_R[r.ico]||COLOR_R.DIR,on=!!ab[r.id];
      return '<div class="fp"><div class="fp-f" style="align-items:flex-start"><span class="av" style="border-radius:12px;background:'+c[0]+';color:'+c[1]+';font-size:.7rem">'+esc(r.ico)+'</span>'+
        '<div style="flex:1;min-width:0"><b style="font-size:.95rem">'+esc(r.titulo)+'</b>'+(r.mentora?' <span class="chip" style="background:#FBEFD6;color:#7A5208">Recomendada por tu mentora</span>':'')+
@@ -606,6 +614,97 @@ function vGratis(){
      '<button type="button" class="btn sec2" data-act="ruta-nueva" style="border-style:dashed">+ Agregar mi propia ruta (cuenta referente, grupo, directorio)</button>')+'</section>';
   return h;
 }
+/* ---------- Búsqueda con tu propia IA: prompt armado con el perfil + pegar el resultado ---------- */
+/* Lo que cambia según el tipo de cliente: señales, a quién descartar y cómo contactar */
+var IA_CAT={
+  independiente:{si:['Vende sesiones o servicios por su cuenta y lo muestra (precios, agenda, cupos).','Se nota que le faltan clientes o que está empezando: pocas reseñas o contrataciones, cuenta pequeña, perfil reciente.','Ya invirtió en formarse o en su negocio.'],
+    no:['Empresas grandes, centros, escuelas o academias (busco personas).','Cuentas muy consolidadas, con muchas reseñas o equipo grande.'],donde:[]},
+  empresa:{si:['Asumió un cargo nuevo o fue ascendido/a hace poco.','Tiene equipo a cargo.','Publica o comenta sobre liderazgo, su equipo o los desafíos de su trabajo.'],
+    no:['Personas sin equipo a cargo o estudiantes.','Páginas de empresas, ofertas de empleo o reclutadores (busco personas).'],
+    donde:['Publicaciones de LinkedIn donde la persona anuncia un nuevo cargo o ascenso ("comienzo un nuevo puesto", "feliz de compartir").','Noticias o sitios de empresas que anuncian nombramientos.']},
+  duena:{si:['Tiene un negocio activo, con clientes y algo de equipo.','Se nota que está creciendo o en un cambio: contratando, abriendo un local, lanzando algo.','La persona dueña aparece como la cara del negocio.'],
+    no:['Franquicias o empresas grandes.','Negocios donde no se ve quién es la persona dueña.'],donde:['Sitios web y fichas de Google Maps de negocios donde aparece la persona dueña.']},
+  particular:{si:['Habla en público del problema que resuelvo o pide ayuda sobre eso.','Está viviendo el momento que describo.'],
+    no:['Profesionales que venden servicios sobre ese mismo tema.','Cuentas de marcas, medios o fundaciones.'],donde:['Foros, grupos y comentarios públicos donde las personas piden ayuda sobre este tema.']}};
+function iaCat(){var C=cats();if(!C.length)C=['independiente'];var si=[],no=[],donde=[];C.forEach(function(c){var x=IA_CAT[c];if(!x)return;si=si.concat(x.si);no=no.concat(x.no);donde=donde.concat(x.donde||[])});return {si:si,no:no,donde:donde,C:C}}
+function iaCantidad(){var n=Number(S.meta.perfil.iaCantidad);return [10,20,30].indexOf(n)>-1?n:20}
+function iaYaTengo(){return lista().filter(function(x){return x.perfilId===(S.meta.perfilActivo||'')||!x.perfilId}).map(function(x){return x.nombre}).filter(Boolean).slice(-60)}
+function promptIA(){var p=S.meta.perfil,C=cats(),tiposN=tiposSel().map(function(t){return t[1]}).concat(comas(p.otrosTipos)),K=iaCat(),soloEmp=K.C.length===1&&K.C[0]==='empresa';
+  var cat=CATEGORIAS.filter(function(c){return C.indexOf(c[0])>-1}).map(function(c){return c[1]+' ('+c[2]+')'}).join('; ')||'sin definir';
+  var gen={mujeres:'Mujeres',hombres:'Hombres'}[p.genero]||'Hombres y mujeres';
+  var mom=momentosSel().map(function(m){return m[1]+': '+m[2]}).concat(p.momentoTxt?[p.momentoTxt]:[]);
+  var rutas=rutasPerfil().filter(function(r){return !r.oculta}),rutasTxt=rutas.map(function(r){return r.titulo+': '+r.que+(r.url&&!/google\.com\/search/.test(r.url)?' ('+r.url+')':'')}).concat(K.donde).map(function(x,i){return (i+1)+'. '+x});
+  var redes=[];rutas.forEach(function(r){var t=r.titulo,n=/instagram|hashtag/i.test(t)?'Instagram':/linkedin/i.test(t)?'LinkedIn':/facebook/i.test(t)?'Facebook':/maps/i.test(t)?'Google Maps':/directorio/i.test(t)?'':t.split(/[:(]/)[0].trim();if(n&&redes.indexOf(n)<0)redes.push(n)});['Instagram','LinkedIn','Web','Otro'].forEach(function(t){if(redes.indexOf(t)<0)redes.push(t)});
+  var Q=preguntas(),ex=exclusionesFicha(),N=iaCantidad(),ya=p.iaEvitar===false?[]:iaYaTengo(),extra=String(p.iaExtra||'').trim();
+  var contacto=soloEmp?'Para cada persona, su contacto es su perfil de LinkedIn (o el que use públicamente para temas de trabajo). No busques teléfonos ni correos personales.':
+    'Para cada persona, busca su contacto PÚBLICO fuera del directorio: su Instagram o LinkedIn, el enlace de su bio, su página web y su ficha de Google Maps. Anota su WhatsApp o correo SOLO si la persona lo publica para recibir clientes. Nunca adivines ni completes números o correos.';
+  return ['Eres mi asistente de prospección. Necesito que busques en internet PERSONAS REALES que podrían ser mis clientes, y me entregues el resultado en un formato que pueda pegar en mi app.','',
+   'QUÉ OFREZCO','- '+(p.oferta||'[escribe tu oferta en la app]')+(p.precio?' (precio aproximado: '+p.precio+')':''),'',
+   'A QUIÉN BUSCO (mi cliente ideal)','- '+gen+'. Tipo de cliente: '+cat+'.',
+   tiposN.length?'- Rol o profesión: '+tiposN.join(', ')+'.':'',
+   p.cliente?'- Cómo es: '+p.cliente:'',p.problema?'- Su problema, con sus palabras: '+p.problema:'',
+   mom.length?'- Momento en que está: '+mom.join('; ')+'.':'',
+   '- Lugar: '+(nombresPaises()||p.lugar||'Latinoamérica')+(p.lugar?' (ej: '+p.lugar+')':'')+'. Idioma: '+(IDIOMAS.filter(function(x){return x[0]===idiomaBus()})[0]||IDIOMAS[0])[1].toLowerCase()+'.',
+   p.palabras?'- Se presenta con palabras como: '+p.palabras+'.':'','',
+   'SEÑALES DE QUE SÍ ES (dale más puntaje)'].concat(senalesSi().length?['- Su perfil dice cosas como: '+senalesSi().join(', ')+'.']:[],K.si.map(function(x){return '- '+x}),['',
+   'QUIÉN NO ES (descártalo)'],ex.length?['- Quienes mencionan: '+ex.join(', ')+'.']:[],K.no.map(function(x){return '- '+x}),
+   ya.length?['- Personas que ya tengo (no las repitas): '+ya.join('; ')+'.']:[],['',
+   'DÓNDE BUSCAR (en este orden)'],rutasTxt,[(rutasTxt.length+1)+'. '+contacto,'',
+   extra?'MIS INDICACIONES EXTRA':'',extra?extra:'',extra?'':'',
+   'REGLAS IMPORTANTES','- No inventes personas, enlaces, frases ni datos. Cada persona debe tener un enlace real que hayas visitado.','- Si no pudiste confirmar algo, ponlo como "por verificar".',
+   '- Para cada contacto indica dónde lo encontraste. Si no lo encontraste publicado, deja el campo vacío.','- Si no puedes buscar en internet, dímelo y no entregues una lista inventada.',
+   '- Busca hasta '+N+' personas. Si encuentras menos que cumplan, entrega solo las que sí cumplen.','- No repitas personas.','',
+   'CALIFICACIÓN','Para cada persona responde estas 3 preguntas con sí o no:','1. '+Q[0],'2. '+Q[1],'3. '+Q[2],'Dale un puntaje de 0 a 100: más alto si las 3 son sí y tiene varias señales de que sí es.','',
+   'FORMATO DE RESPUESTA','1. En el chat, escribe solo 2 o 3 líneas con lo que encontraste y qué limitó la búsqueda.',
+   '2. Entrégame el resultado como un ARCHIVO DESCARGABLE llamado prospectos.json, con todas las personas juntas. Así no se pierde ninguna.',
+   '3. Si no puedes crear archivos, escribe el JSON en el chat en bloques de 10 personas, cerrando bien cada bloque, y al final escribe "Escribe SIGUE para ver más". Cuando te escriba SIGUE, entrega el siguiente bloque.',
+   '4. Usa exactamente este formato, sin cambiar los nombres de los campos:','',
+   '{"fuente":"prompt IA","prospectos":[{"nombre":"","enlace":"https://...","red":"'+redes.join(' | ')+'","instagram":"","whatsapp":"","email":"","contacto_fuente":"","ciudad":"","ofrece":"","senales":[""],"respuestas":["sí","sí","sí"],"puntaje":85,"por_que":"","verificado":true}],"descartados":[{"nombre":"","enlace":"","motivo":""}]}'
+   ]).filter(function(x,i,a){if(x!=='')return true;if(a[i-1]==='')return false;var k=i+1;while(a[k]==='')k++;return !/^- /.test(a[k]||'')}).join('\n')}
+function hojaIAAjustar(){var p=S.meta.perfil,N=iaCantidad(),ya=iaYaTengo().length;
+  return '<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap"><section class="sec"><span class="eyebrow">Búsqueda con tu IA</span><h2>Tu prompt</h2>'+
+   '<p class="nota">Se arma solo con tu perfil <b>'+esc(perfilAct().nombre)+'</b>: tu oferta, tu cliente, sus señales, tus países, tus rutas y tus 3 preguntas. Si cambias tu perfil, el prompt cambia.</p>'+
+   '<div class="campo"><span>¿Cuántas personas quieres?</span><div class="opcs" role="group" aria-label="Cantidad">'+[10,20,30].map(function(n){return '<button type="button" class="opc" data-act="ia-cant" data-v="'+n+'" aria-pressed="'+(n===N)+'">'+n+'</button>'}).join('')+'</div></div>'+
+   '<label class="campo" for="ia-evitar" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="ia-evitar" data-iaevitar="1"'+(p.iaEvitar===false?'':' checked')+'> No repetir a quienes ya tengo en la app'+(ya?' ('+ya+')':'')+'</label>'+
+   '<label class="campo" for="ia-extra">Mis indicaciones extra<small>Opcional. Ej: "Solo personas que atiendan online", "Prioriza Viña del Mar", "Busca también en grupos de Facebook".</small><textarea id="ia-extra" data-fperfil="iaExtra" style="min-height:80px">'+esc(p.iaExtra||'')+'</textarea></label>'+
+   '<div><button class="btn" data-act="ia-copiar">Copiar prompt</button></div></section>'+
+   '<section class="sec"><h3>Así queda</h3><textarea id="ia-prev" readonly style="min-height:360px;font-size:.8rem">'+esc(promptIA())+'</textarea>'+
+   '<p class="nota">Pégalo en Claude, ChatGPT o Gemini con la búsqueda web activada. Te va a entregar un archivo <b>prospectos.json</b>: descárgalo y súbelo en la app. Si te lo entrega por partes, sube cada archivo: no se repiten.</p></section></div>'}
+function leerIA(txt){txt=String(txt||'');var objs=[];
+  try{var a=txt.indexOf('{'),b=txt.lastIndexOf('}');var d=JSON.parse(txt.slice(a,b+1));if(Array.isArray(d.prospectos))return {lista:d.prospectos,cortado:false}}catch(e){}
+  // Texto cortado o con texto alrededor: se rescatan una por una las personas completas
+  var k=txt.indexOf('"prospectos"');if(k<0)k=0;var i=txt.indexOf('{',k+1);
+  while(i>-1){var nivel=0,enStr=false,esc2=false,j=i;
+    for(;j<txt.length;j++){var c=txt[j];if(enStr){if(esc2)esc2=false;else if(c==='\\')esc2=true;else if(c==='"')enStr=false;continue}
+      if(c==='"')enStr=true;else if(c==='{')nivel++;else if(c==='}'){nivel--;if(nivel===0)break}}
+    if(j>=txt.length)break;
+    try{var o=JSON.parse(txt.slice(i,j+1));if(o&&o.nombre&&(o.enlace||o.instagram||o.whatsapp))objs.push(o)}catch(e){}
+    var cierre=txt.indexOf('"descartados"',i);if(cierre>-1&&cierre<j)break;
+    i=txt.indexOf('{',j+1);if(cierre>-1&&i>cierre)break}
+  return {lista:objs,cortado:true}}
+function aProspecto(o){var ig=String(o.instagram||'').trim(),en=String(o.enlace||'').trim(),wa=String(o.whatsapp||'').trim(),red=String(o.red||'').trim();
+  var canal=/instagram/i.test(ig||en)?'instagram':/linkedin/i.test(en)?'linkedin':/facebook/i.test(en)?'facebook':wa?'whatsapp':'otro';
+  var pts=Math.max(0,Math.min(100,Number(o.puntaje)||0)),v=Math.round(pts/20);
+  var notas=[o.ofrece,o.ciudad,(o.senales||[]).length?'Señales: '+o.senales.join(' · '):'',o.email?'Correo: '+o.email:'',o.contacto_fuente?'Contacto: '+o.contacto_fuente:'',o.verificado===false?'⚠ Por verificar':''].filter(Boolean).join('\n');
+  return normal({id:nuevoId(),nombre:String(o.nombre).slice(0,80),canal:canal,perfil:/instagram/i.test(ig)?ig:en,link:en,telefono:wa,notas:notas,estado:'revisar',grupo:'nueva',
+    etiquetas:['IA'+(red&&red.indexOf('|')<0?' · '+red:'')],origen:'ia',calificado:pts>0,ptsIA:pts||null,n:v,a:v,c:v,motivo:o.por_que?'Según tu IA: '+o.por_que:'',perfilId:S.meta.perfilActivo||''})}
+function hojaIA(){var d=hoja;
+  return '<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap"><section class="sec"><span class="eyebrow">Búsqueda con tu IA</span><h2>Subir resultado de mi IA</h2>'+
+   '<p class="nota">Sube el archivo <b>prospectos.json</b> que te entregó tu IA (Claude, ChatGPT, Gemini…). La app toma a cada persona y la deja en '+esc(nombreFija('revisar'))+'. Puedes subir varios archivos a la vez.</p>'+
+   '<label class="btn" for="ia-archivo" style="display:flex;justify-content:center;align-items:center;min-height:52px;cursor:pointer">📎 Subir archivo de mi IA</label><input type="file" id="ia-archivo" accept=".json,.txt,application/json,text/plain" multiple hidden>'+
+   '<details class="desp"'+(d.texto?' open':'')+'><summary>¿Tu IA no te dio archivo? Pega el texto aquí</summary>'+
+   '<label class="campo" for="ia-txt"><span hidden>Respuesta de tu IA</span><textarea id="ia-txt" style="min-height:160px" placeholder="Pega aquí la respuesta completa">'+esc(d.texto||'')+'</textarea></label>'+
+   '<div><button class="btn sec2" data-act="ia-leer">Leer y agregar a mi lista</button></div></details></section>'+
+   (d.res?'<section class="sec"><h3>'+d.res.nuevas+' agregadas'+(d.res.ya?' · '+d.res.ya+' ya estaban':'')+'</h3>'+(d.res.cortado?'<p class="nota" style="color:var(--cal)">Parece que la respuesta venía cortada: agregué a las personas completas. Para las que faltan, pídele a tu IA el archivo prospectos.json o escríbele SIGUE y súbelo o pégalo aquí.</p>':'')+
+     '<div class="lista">'+d.res.items.map(function(x){return '<div class="fp"><div class="fp-f"><span class="av" style="background:#6B6478">'+esc(iniciales(x.nombre))+'</span><div style="flex:1;min-width:0"><b>'+esc(x.nombre)+'</b><p class="nota">'+esc((x.ciudad||'')+(x.puntaje?' · '+x.puntaje+' pts':''))+'</p></div><span class="chip">'+(x.ya?'Ya estaba':'Por revisar')+'</span></div></div>'}).join('')+'</div>'+
+     '<div class="trio" style="grid-template-columns:1fr 1fr"><button type="button" data-act="cerrar">Listo</button><button type="button" class="si" data-act="revisar-ir">Revisarlas ahora</button></div></section>':'')+'</div>'}
+function pegarIA(){var t=$('#ia-txt');agregarIA([t?t.value:''],'texto')}
+function agregarIA(textos,de){var r={lista:[],cortado:false};textos.forEach(function(x){var q=leerIA(x);r.lista=r.lista.concat(q.lista);if(q.cortado&&q.lista.length)r.cortado=r.cortado||!/\]\s*}\s*$/.test(String(x).trim())});
+  if(!r.lista.length){toast(de==='archivo'?'No encontré personas en ese archivo. Revisa que sea el que te dio tu IA.':'No encontré personas en el texto. Pega la respuesta completa de tu IA.');return}
+  var items=[],nuevas=[],ya=0;r.lista.forEach(function(o){var en=String(o.enlace||'').toLowerCase().replace(/\/$/,'');
+    var dup=en&&lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===en})});
+    if(dup){ya++;items.push(Object.assign({},o,{ya:true}));return}var np=aProspecto(o);anota(np,'Agregado desde tu IA');S.pros[np.id]=np;nuevas.push(np);items.push(o)});
+  Store.muchos(nuevas);if(!hoja||hoja.tipo!=='ia')hoja={tipo:'ia'};hoja.texto='';hoja.res={nuevas:nuevas.length,ya:ya,items:items,cortado:r.cortado};pintaHoja();render();toast(nuevas.length+' personas agregadas a '+nombreFija('revisar')+'.')}
 /* ---------- Guardar rápido: reconoce perfiles, fichas, WhatsApp y correos ---------- */
 function reconocer(txt){var out=[];
   String(txt||'').split(/\n/).map(function(l){return l.trim()}).filter(Boolean).forEach(function(l){
@@ -772,7 +871,7 @@ function normal(p){
 
 /* ---------- Cálculos ---------- */
 function lista(){return Object.keys(S.pros).map(function(k){return S.pros[k]})}
-function pts(p){return p.calificado?Math.round((Number(p.n)+Number(p.a)+Number(p.c))/15*100):-1}
+function pts(p){if(p.ptsIA!=null&&p.ptsIA!=='')return Number(p.ptsIA);return p.calificado?Math.round((Number(p.n)+Number(p.a)+Number(p.c))/15*100):-1}
 function temp(p){var v=pts(p);return v<0?'sin':v>=70?'cal':v>=45?'tib':'fri'}
 var TEMP={cal:'Caliente',tib:'Tibia',fri:'Fría',sin:'Sin calificar'};
 function insignia(p){var v=pts(p);return '<span class="pt '+temp(p)+'">'+(v<0?'Sin puntaje':v+' pts')+'</span>'}
@@ -1199,6 +1298,9 @@ function pintaHoja(){
   if(hoja.tipo==='cuenta'){el.innerHTML=hojaCuenta();return}
   if(hoja.tipo==='revisar'){el.innerHTML=hojaRevisar();return}
   if(hoja.tipo==='guardar'){el.innerHTML=hojaGuardar();return}
+  if(hoja.tipo==='ia'){el.innerHTML=hojaIA();return}
+  if(hoja.tipo==='ia-ajustar'){el.innerHTML=hojaIAAjustar();return}
+  if(hoja.tipo==='ia-prompt'){el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap"><section class="sec"><h2>Tu prompt</h2><p class="nota">Selecciónalo todo y cópialo.</p><textarea style="min-height:420px" readonly>'+esc(promptIA())+'</textarea></section></div>';return}
   if(hoja.tipo==='rutas-admin'){el.innerHTML=hojaRutasAdmin();return}
   if(hoja.tipo==='proceso'){el.innerHTML=hojaProceso();return}
   if(hoja.tipo==='nuevo'){var d=hoja.d;
@@ -1414,7 +1516,7 @@ document.addEventListener('click',function(ev){
   if(a==='revisar-ir'){var cola=colaRevisar(v);if(!cola.length){toast('No hay nadie por revisar.');return}hoja={tipo:'revisar',cola:cola,i:0,c:{si:0,des:0,no:0},motivo:false};pintaHoja();$('#hoja').scrollTop=0;return}
   if(a==='rev-q'){hoja.resp=hoja.resp||{};hoja.resp[v]=b.dataset.m==='1';pintaHoja();return}
   if(a==='rev'){var pr=S.pros[hoja.cola[hoja.i]];if(!pr)return;
-    var RR=hoja.resp||{},nr=Object.keys(RR).length;if(nr){var sí=Object.keys(RR).filter(function(k){return RR[k]}).length,vv=Math.round(sí/3*5);pr.n=vv;pr.a=vv;pr.c=vv;pr.calificado=true;
+    var RR=hoja.resp||{},nr=Object.keys(RR).length;if(nr){var sí=Object.keys(RR).filter(function(k){return RR[k]}).length,vv=Math.round(sí/3*5);pr.n=vv;pr.a=vv;pr.c=vv;pr.calificado=true;pr.ptsIA=null;
       pr.respuestas=preguntas().map(function(q,k){return q+' '+(RR[k]===true?'Sí':RR[k]===false?'No':'—')});pr.motivo='Preguntas: '+pr.respuestas.join(' · ');Store.pro(pr)}
     if(v==='no'){hoja.motivo=true;pintaHoja();return}
     if(v==='si')mover(pr,'calza');hoja.c[v]++;hoja.i++;hoja.resp={};pintaHoja();render();return}
@@ -1429,6 +1531,12 @@ document.addEventListener('click',function(ev){
   if(a==='bus-modo'){BUS.modo=v;BUS.paso='';render();return}
   if(a==='gr-guardar'){hoja={tipo:'guardar',ruta:BUS.rutaUlt||'',texto:'',hechos:[]};pintaHoja();$('#hoja').scrollTop=0;return}
   if(a==='gq-ok'){guardarRapido();return}
+  if(a==='ia-pegar'){hoja={tipo:'ia',texto:''};pintaHoja();$('#hoja').scrollTop=0;return}
+  if(a==='ia-leer'){pegarIA();return}
+  if(a==='ia-ajustar'){hoja={tipo:'ia-ajustar'};pintaHoja();$('#hoja').scrollTop=0;return}
+  if(a==='ia-cant'){S.meta.perfil.iaCantidad=Number(v);Store.meta();pintaHoja();return}
+  if(a==='ia-copiar'){var pr=promptIA();var ok=function(){toast('Prompt copiado. Pégalo en tu IA con la búsqueda web activada.')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(pr).then(ok,function(){hoja={tipo:'ia-prompt'};pintaHoja()});else{hoja={tipo:'ia-prompt'};pintaHoja()}return}
   if(a==='ruta-abrir'){BUS.rutasAb=BUS.rutasAb||{};BUS.rutasAb[v]=true;BUS.rutaUlt=b.dataset.n||'';setTimeout(render,300);return}
   if(a==='ruta-nueva'){BUS.nuevaRuta=!BUS.nuevaRuta;render();return}
   if(a==='ruta-guardar'){var rt={titulo:($('#nr-t')||{}).value||'',url:($('#nr-u')||{}).value||'',que:($('#nr-q')||{}).value||''};if(!/^https?:\/\//.test(rt.url)){toast('Pega un enlace que empiece con https://');return}
@@ -1521,6 +1629,8 @@ document.addEventListener('click',function(ev){
 document.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&(ev.target.id==='ac-pass'||ev.target.id==='ac-mail')){ev.preventDefault();enviarAcceso()}});
 document.addEventListener('toggle',function(ev){if(ev.target&&ev.target.id==='det-fil')BUS.verFiltros=ev.target.open;var hb=ev.target&&ev.target.dataset&&ev.target.dataset.hoyab;if(hb){if(ev.target.open)S.hoyAb=hb;else if(S.hoyAb===hb)S.hoyAb=''}},true);
 document.addEventListener('change',function(ev){
+  if(ev.target.id==='ia-archivo'&&ev.target.files.length){var fs=[].slice.call(ev.target.files),tx=[],n=0;
+    fs.forEach(function(fl,i){var r=new FileReader();r.onload=function(){tx[i]=String(r.result||'');if(++n===fs.length)agregarIA(tx,'archivo')};r.onerror=function(){tx[i]='';if(++n===fs.length)agregarIA(tx,'archivo')};r.readAsText(fl)});ev.target.value='';return}
   if(ev.target.id!=='importar'||!ev.target.files[0])return;
   var fr=new FileReader();
   fr.onload=function(){
@@ -1545,7 +1655,8 @@ document.addEventListener('input',function(ev){
   if(ds.em){var M=editMedio(),it=M[Number(ds.i)];if(!it)return;it[ds.em]=ds.em==='fecha'?t.checked:ds.em==='dias'?Math.max(0,Math.round(Number(t.value)||0)):t.value;Store.meta();return}
   if(ds.seg){var nv=Math.round(Number(t.value));if(nv>=1){if(!S.meta.seg)S.meta.seg={};S.meta.seg[ds.seg]=nv;Store.meta()}return}
   if(ds.msj){if(!S.meta.mensajes)S.meta.mensajes={};S.meta.mensajes[ds.msj]=t.value;Store.meta();return}
-  if(ds.fperfil){S.meta.perfil[ds.fperfil]=t.value;Store.meta();BUS.paso='';return}
+  if(ds.fperfil){S.meta.perfil[ds.fperfil]=t.value;Store.meta();BUS.paso='';var iap=$('#ia-prev');if(iap)iap.value=promptIA();return}
+  if(ds.iaevitar){S.meta.perfil.iaEvitar=t.checked;Store.meta();var iap2=$('#ia-prev');if(iap2)iap2.value=promptIA();return}
   if(ds.pq){if(!Array.isArray(S.meta.perfil.preguntas))S.meta.perfil.preguntas=['','',''];S.meta.perfil.preguntas[Number(ds.pq)]=t.value;Store.meta();return}
   if(ds.pnombre){perfilAct().nombre=t.value;Store.meta();return}
   if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
