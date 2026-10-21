@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.4 (21 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.6 (21 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -269,7 +269,7 @@ function digitos(t){return String(t||'').replace(/\D/g,'')}
 function waLink(p,txt){var d=digitos(p.telefono);return d.length>=8?'https://wa.me/'+d+(txt?'?text='+encodeURIComponent(txt):''):''}
 var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
 
-function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:'',preguntas:['','',''],rutas:[]}}
+function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:'',preguntas:['','',''],rutas:[],rutasEdit:{}}}
 var S={meta:{perfil:perfilVacio(),plan:null,hechas:{},metaDiaria:5},
        pros:{},tab:'hoy',filtro:'listo'};
 var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
@@ -551,15 +551,20 @@ function rutasPerfil(){
   var ex=exclusionesFicha().slice(0,4).map(function(x){return ' -"'+x+'"'}).join('');
   var indep=!C.length||C.indexOf('independiente')>-1,emp=C.indexOf('empresa')>-1,due=C.indexOf('duena')>-1,par=C.indexOf('particular')>-1;
   RUTAS_MENTORA.filter(function(r){return r.activa!==false&&(!r.nicho||r.nicho==='*'||C.indexOf(r.nicho)>-1)}).forEach(function(r){R.push({id:'m'+r.id,ico:'★',titulo:r.titulo,que:r.que||'',meta:'Guarda 3',url:rellenar(r.url),mentora:true})});
-  if(indep||due)R.push({id:'maps',ico:'MAPS',titulo:'Google Maps',que:'Fichas de "'+w+'"'+(lg?' en '+lg:'')+' con teléfono, web o WhatsApp.',meta:'Guarda 5',url:'https://www.google.com/maps/search/'+encodeURIComponent(q)});
-  if(indep||due||par)R.push({id:'ig',ico:'IG',titulo:'Perfiles de Instagram',que:'Personas que se presentan como "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 5',url:g('site:instagram.com '+q+' -inurl:/p/ -inurl:/reel/'+ex)});
-  if(indep&&tag)R.push({id:'tag',ico:'#',titulo:'Hashtag #'+tag,que:'Publicaciones recientes: mira quién las publica.',meta:'Guarda 3',url:'https://www.instagram.com/explore/tags/'+tag+'/'});
-  if(indep)R.push({id:'dir',ico:'DIR',titulo:'Directorios de profesionales',que:'Páginas donde "'+w+'" se publicitan con nombre y contacto.',meta:'Guarda 3',url:g(w+' directorio '+lg+' contacto'+ex)});
-  if(emp||due)R.push({id:'li',ico:'IN',titulo:'Perfiles de LinkedIn',que:'Personas con el cargo "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 5',url:g('site:linkedin.com/in '+q+ex)});
-  if(emp)R.push({id:'li2',ico:'IN',titulo:'Búsqueda de personas en LinkedIn',que:'Necesitas tener sesión iniciada en LinkedIn.',meta:'Guarda 3',url:'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(q)});
-  if(indep||par)R.push({id:'fb',ico:'FB',titulo:'Facebook público',que:'Perfiles y páginas de "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 3',url:g('site:facebook.com '+q+ex)});
-  if(par)R.push({id:'fbg',ico:'FB',titulo:'Grupos de Facebook',que:'Grupos donde tu cliente pide ayuda.',meta:'Guarda 3',url:'https://www.facebook.com/search/groups/?q='+encodeURIComponent(w)});
-  (S.meta.perfil.rutas||[]).forEach(function(r,k){R.push({id:'u'+k,ico:'MÍA',titulo:r.titulo||'Mi ruta',que:r.que||'Tu ruta guardada',meta:'Guarda 3',url:rellenar(r.url),propia:k})});
+  // Cada ruta automática se arma desde un "texto de búsqueda" que la persona puede editar
+  var A=[];
+  if(indep||due)A.push({id:'maps',ico:'MAPS',titulo:'Google Maps',q:q,que:function(t){return 'Fichas de "'+t+'" con teléfono, web o WhatsApp.'},meta:'Guarda 5',arma:function(t){return 'https://www.google.com/maps/search/'+encodeURIComponent(t)}});
+  if(indep||due||par)A.push({id:'ig',ico:'IG',titulo:'Perfiles de Instagram',q:q,que:function(t){return 'Personas que se presentan como "'+t+'".'},meta:'Guarda 5',arma:function(t){return g('site:instagram.com '+t+' -inurl:/p/ -inurl:/reel/'+ex)}});
+  if(indep&&tag)A.push({id:'tag',ico:'#',titulo:'Hashtag',q:tag,que:function(t){return 'Publicaciones recientes con #'+aHashtag(t)+': mira quién las publica.'},meta:'Guarda 3',arma:function(t){return 'https://www.instagram.com/explore/tags/'+aHashtag(t)+'/'}});
+  if(indep)A.push({id:'dir',ico:'DIR',titulo:'Directorios de profesionales',q:(w+' directorio '+lg).trim(),que:function(t){return 'Páginas donde se publicitan con nombre y contacto: "'+t+'".'},meta:'Guarda 3',arma:function(t){return g(t+' contacto'+ex)}});
+  if(emp||due)A.push({id:'li',ico:'IN',titulo:'Perfiles de LinkedIn',q:q,que:function(t){return 'Personas con el cargo "'+t+'".'},meta:'Guarda 5',arma:function(t){return g('site:linkedin.com/in '+t+ex)}});
+  if(emp)A.push({id:'li2',ico:'IN',titulo:'Búsqueda de personas en LinkedIn',q:q,que:function(){return 'Necesitas tener sesión iniciada en LinkedIn.'},meta:'Guarda 3',arma:function(t){return 'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(t)}});
+  if(indep||par)A.push({id:'fb',ico:'FB',titulo:'Facebook público',q:q,que:function(t){return 'Perfiles y páginas de "'+t+'".'},meta:'Guarda 3',arma:function(t){return g('site:facebook.com '+t+ex)}});
+  if(par)A.push({id:'fbg',ico:'FB',titulo:'Grupos de Facebook',q:w,que:function(t){return 'Grupos sobre "'+t+'" donde tu cliente pide ayuda.'},meta:'Guarda 3',arma:function(t){return 'https://www.facebook.com/search/groups/?q='+encodeURIComponent(t)}});
+  var ed=S.meta.perfil.rutasEdit||{};
+  A.forEach(function(r){var o=ed[r.id]||{},t=String(o.q||'').trim()||r.q;
+    R.push({id:r.id,ico:r.ico,titulo:String(o.titulo||'').trim()||r.titulo,q:t,qBase:r.q,que:r.que(t),meta:r.meta,url:r.arma(t),editable:true,editada:!!(o.q||o.titulo),oculta:!!o.oculta})});
+  (S.meta.perfil.rutas||[]).forEach(function(r,k){R.push({id:'u'+k,ico:'MÍA',titulo:r.titulo||'Mi ruta',que:r.que||'Tu ruta guardada',meta:'Guarda 3',url:rellenar(r.url),propia:k,urlRaw:r.url})});
   return R}
 var COLOR_R={MAPS:['#E3F2EA','#1F7A4D'],IG:['#FBE4DC','#A3341A'],'#':['#EFE7F8','#4B168E'],DIR:['#FBEFD6','#7A5208'],IN:['#E6EEF7','#3B5B82'],FB:['#E6EEF7','#3B5B82'],'★':['#FBEFD6','#7A5208'],'MÍA':['#EFE7F8','#4B168E']};
 /* ---------- Créditos: cada persona tiene US$2,5 = 100 créditos ---------- */
@@ -574,7 +579,7 @@ function vSaldo(){var g=aCred(gastadoUsd()),q=saldoCred(),pc=Math.min(100,Math.r
     (q<=0?'<p class="error">Se acabaron tus créditos. Pídele más a tu mentora. Mientras, puedes usar la búsqueda gratis.</p>':q<10?'<p class="nota" style="color:var(--cal)">Te quedan pocos créditos.</p>':'')+'</div>'}
 function guardadosHoy(){return lista().filter(function(x){return x.origen==='gratis'&&x.creado===hoy()}).length}
 function vGratis(){
-  var R=rutasPerfil(),n=guardadosHoy(),ab=BUS.rutasAb||{};
+  var TODAS=rutasPerfil(),R=TODAS.filter(function(r){return !r.oculta}),ocultas=TODAS.filter(function(r){return r.oculta}),n=guardadosHoy(),ab=BUS.rutasAb||{},edi=BUS.editRuta||'';
   var h='<section class="sec"><p class="nota">Sin costo. Abre una ruta, mira, y pega aquí los perfiles que te gusten. La app los ordena y los deja listos para seguir. Perfil: <b>'+esc(perfilAct().nombre)+'</b></p>'+
    '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b>Tu sesión de hoy</b><span class="nota"><b style="color:var(--morado)">'+n+'</b> de 10 guardados</span></div>'+
    '<div class="avance"><i style="width:'+Math.min(100,n*10)+'%"></i></div><div><button class="btn" data-act="gr-guardar">+ Guardar rápido</button></div></div></section>'+
@@ -583,7 +588,15 @@ function vGratis(){
        '<div style="flex:1;min-width:0"><b style="font-size:.95rem">'+esc(r.titulo)+'</b>'+(r.mentora?' <span class="chip" style="background:#FBEFD6;color:#7A5208">Recomendada por tu mentora</span>':'')+
        '<p class="nota" style="font-size:.83rem">'+esc(r.que)+'</p><small style="color:var(--dorado);font-weight:600">'+esc(r.meta)+'</small></div>'+
        '<a class="ba'+(on?' sec2':'')+'" style="display:flex;align-items:center;text-decoration:none" href="'+esc(r.url)+'" target="_blank" rel="noopener" data-act="ruta-abrir" data-v="'+esc(r.id)+'" data-n="'+esc(r.titulo)+'">'+(on?'Abierta':'Abrir')+'</a>'+
-       (r.propia!=null?'<button type="button" class="ib" data-act="ruta-quitar" data-v="'+r.propia+'" aria-label="Quitar esta ruta">✕</button>':'')+'</div></div>'}).join('')+'</div>'+
+       (r.editable||r.propia!=null?'<button type="button" class="ib" data-act="ruta-editar" data-v="'+esc(r.id)+'" aria-label="Editar esta ruta">✎</button>':'')+'</div>'+
+       (edi===r.id?'<div class="fp-menu">'+
+         '<label class="campo" for="re-t">Nombre<input type="text" id="re-t" value="'+esc(r.titulo)+'"></label>'+
+         (r.editable?'<label class="campo" for="re-q">Qué buscar<small>'+(r.id==='tag'?'Un hashtag, sin # ni espacios.':'Las palabras que se buscan en esta ruta.')+'</small><input type="text" id="re-q" value="'+esc(r.q)+'"></label>':
+           '<label class="campo" for="re-u">Enlace<input type="url" id="re-u" value="'+esc(r.urlRaw||r.url)+'"></label><label class="campo" for="re-que">Qué vas a encontrar<input type="text" id="re-que" value="'+esc(r.que)+'"></label>')+
+         '<div class="fila"><button class="btn" data-act="ruta-ed-ok" data-v="'+esc(r.id)+'">Guardar</button>'+
+         (r.editable?(r.editada?'<button class="btn sec2" data-act="ruta-ed-base" data-v="'+esc(r.id)+'">Volver a la sugerida</button>':'')+'<button class="btn sec2" data-act="ruta-ocultar" data-v="'+esc(r.id)+'">Ocultar esta ruta</button>':
+           '<button class="btn peligro" data-act="ruta-quitar" data-v="'+r.propia+'">Eliminar</button>')+'</div></div>':'')+'</div>'}).join('')+'</div>'+
+   (ocultas.length?'<p class="nota">Rutas ocultas: '+ocultas.map(function(r){return '<button type="button" class="opc" data-act="ruta-mostrar" data-v="'+esc(r.id)+'">'+esc(r.titulo)+' · mostrar</button>'}).join(' ')+'</p>':'')+
    (BUS.nuevaRuta?'<div class="panel" style="display:flex;flex-direction:column;gap:8px"><b>Mi ruta</b><label class="campo" for="nr-t">Nombre<input type="text" id="nr-t" placeholder="Ej: Comentarios de @cuenta.referente"></label>'+
      '<label class="campo" for="nr-u">Enlace<input type="url" id="nr-u" placeholder="https://"></label><label class="campo" for="nr-q">Qué vas a encontrar<input type="text" id="nr-q" placeholder="Ej: Personas que comentan sus publicaciones"></label>'+
      '<div class="fila"><button class="btn" data-act="ruta-guardar">Guardar ruta</button><button class="btn sec2" data-act="ruta-nueva">Cancelar</button></div></div>':
@@ -1216,6 +1229,7 @@ function pintaHoja(){
   el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button>'+(p.calificado?insignia(p):'<span class="pt sin">'+nombreGrupo(grupoDe(p))+'</span>')+'</div><div class="wrap">'+
    '<section class="sec" style="flex-direction:row;align-items:center;gap:12px"><span class="av" style="width:52px;height:52px;font-size:1.05rem;background:'+(COLOR_G[grupoDe(p)]||'#6B6478')+'">'+esc(iniciales(p.nombre))+'</span>'+
      '<div style="min-width:0"><h2>'+esc(p.nombre||'Sin nombre')+'</h2><p class="nota">'+CANALES[p.canal]+((p.etiquetas||[]).length?' · '+esc(p.etiquetas.join(', ')):'')+(p.origen==='radar'?' · vino del radar':'')+'</p></div></section>'+
+   (p.canal==='whatsapp'&&!p.perfil?'':'<section class="sec">'+botonPerfil(p)+'<small class="nota">Revisa su perfil y anota lo que te sirva en "Sus datos y notas".</small></section>')+
    '<section class="sec panel" style="gap:8px"><small class="nota" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">Su camino · toca una etapa para moverla</small>'+fuera+
      '<div class="camino">'+C.map(function(x,k){return '<button type="button" class="'+(k<ic?'hecha':k===ic?'actual':'')+'" data-act="ir-etapa" data-v="'+x[0]+'" aria-label="Mover a '+esc(x[1])+'"><i></i>'+esc(x[1])+'</button>'}).join('')+'</div></section>'+
    '<section class="accion"><small class="nota">Lo que toca ahora</small><div class="preg">'+esc(preg)+'</div>'+avisoSeg+(acciones?'<div class="fila">'+acciones+'</div>':'')+
@@ -1253,10 +1267,10 @@ function hojaRevisar(){var d=hoja,id=d.cola[d.i],p=id&&S.pros[id];
     '</div><p class="nota">Las que calzan quedaron en "'+esc(nombreFija('listo'))+'".</p><button class="btn" data-act="cerrar">Listo</button></section></div>';
   var bio=String(p.notas||'').split('\n'),usu=bio[0]&&bio[0].charAt(0)==='@'?bio.shift():'';
   return top+'<section class="tarj"><div style="display:flex;align-items:center;gap:12px"><span class="av" style="width:56px;height:56px;font-size:1.15rem;background:'+(COLOR_G[grupoDe(p)]||'#6B6478')+'">'+esc(iniciales(p.nombre))+'</span>'+
-    '<div style="flex:1;min-width:0"><h2 style="font-size:1.25rem">'+esc(p.nombre)+'</h2><p class="nota">'+esc(usu||CANALES[p.canal])+'</p></div>'+(p.calificado?insignia(p):'')+'</div>'+
+    '<div style="flex:1;min-width:0"><h2 style="font-size:1.25rem">'+esc(p.nombre)+'</h2><p class="nota">'+esc(usu||CANALES[p.canal])+'</p></div>'+(p.calificado?insignia(p):'')+'</div>'+botonPerfil(p)+
     '<p style="line-height:1.5">'+esc(bio.join(' ').slice(0,400)||'Sin descripción.')+'</p>'+
     (p.motivo?'<div style="background:var(--dorado-suave,#FBF6EC);border-radius:12px;padding:10px 12px"><small class="nota" style="font-weight:600;text-transform:uppercase">Por qué calzaría</small><p style="font-size:.9rem">'+esc(p.motivo.replace(/^Puntaje automático:\s*/,''))+'</p></div>':'')+
-    linksPerfil(p)+(p.link&&!/instagram|linkedin|facebook/.test(p.link)?'<div class="links"><a href="'+esc(p.link)+'" target="_blank" rel="noopener">Abrir enlace</a></div>':'')+'</section>'+
+    '</section>'+
     '<section class="sec"><b>Mira su perfil y responde:</b>'+preguntas().map(function(q,k){var r=(d.resp||{})[k];
       return '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><span>'+esc(q)+'</span><div class="trio" style="grid-template-columns:1fr 1fr">'+
         '<button type="button" data-act="rev-q" data-v="'+k+'" data-m="1"'+(r===true?' class="si"':'')+' style="min-height:44px">Sí</button><button type="button" data-act="rev-q" data-v="'+k+'" data-m="0"'+(r===false?' style="min-height:44px;background:#5E5470;color:#fff"':' style="min-height:44px"')+'>No</button></div></div>'}).join('')+
@@ -1265,6 +1279,10 @@ function hojaRevisar(){var d=hoja,id=d.cola[d.i],p=id&&S.pros[id];
     (d.motivo?'<section class="sec"><b>¿Por qué no calza?</b><div class="opcs">'+MOTIVOS.map(function(m){return '<button type="button" class="opc" data-act="rev-motivo" data-v="'+m[0]+'">'+m[1]+'</button>'}).join('')+'<button type="button" class="opc" data-act="rev-motivo" data-v="otro">Saltar</button></div></section>':
     '<div class="trio"><button type="button" class="no" data-act="rev" data-v="no">✕<br>No calza</button><button type="button" data-act="rev" data-v="des">❙❙<br>Después</button><button type="button" class="si" data-act="rev" data-v="si">✓<br>Calza</button></div>')+'</div>'}
 
+function botonPerfil(p){var ok=/^https?:\/\//i,u=ok.test(p.perfil||'')?p.perfil:(ok.test(p.link||'')?p.link:'');
+  var red=/linkedin/i.test(u)?'LinkedIn':/instagram/i.test(u)?'Instagram':/facebook/i.test(u)?'Facebook':/maps|goo\.gl/i.test(u)?'Google Maps':'';
+  if(!u){var l=linksPerfil(p);return l?'<div>'+l+'</div>':''}
+  return '<a class="btn" href="'+esc(u)+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none">'+IC_LINK.replace('<svg ','<svg style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2" ')+(red?'Ver su perfil de '+red:'Abrir su enlace')+'</a>'}
 function linksPerfil(p){
   var dom={instagram:'instagram.com',linkedin:'linkedin.com',facebook:'facebook.com'}[p.canal],ok=/^https?:\/\//i;
   var perfil=ok.test(p.perfil)?p.perfil:(dom&&ok.test(p.link)&&p.link.indexOf(dom)>-1?p.link:''),L=[];
@@ -1410,7 +1428,15 @@ document.addEventListener('click',function(ev){
   if(a==='ruta-nueva'){BUS.nuevaRuta=!BUS.nuevaRuta;render();return}
   if(a==='ruta-guardar'){var rt={titulo:($('#nr-t')||{}).value||'',url:($('#nr-u')||{}).value||'',que:($('#nr-q')||{}).value||''};if(!/^https?:\/\//.test(rt.url)){toast('Pega un enlace que empiece con https://');return}
     if(!Array.isArray(S.meta.perfil.rutas))S.meta.perfil.rutas=[];S.meta.perfil.rutas.push(rt);BUS.nuevaRuta=false;Store.meta();render();toast('Ruta guardada en este perfil.');return}
-  if(a==='ruta-quitar'){(S.meta.perfil.rutas||[]).splice(Number(v),1);Store.meta();render();return}
+  if(a==='ruta-quitar'){(S.meta.perfil.rutas||[]).splice(Number(v),1);BUS.editRuta='';Store.meta();render();return}
+  if(a==='ruta-editar'){BUS.editRuta=BUS.editRuta===v?'':v;render();return}
+  if(a==='ruta-ed-ok'){var pf3=S.meta.perfil;
+    if(v.charAt(0)==='u'){var ru=(pf3.rutas||[])[Number(v.slice(1))];if(ru){var nu=($('#re-u')||{}).value||'';if(!/^https?:\/\//.test(nu)){toast('El enlace debe empezar con https://');return}ru.titulo=($('#re-t')||{}).value||ru.titulo;ru.url=nu;ru.que=($('#re-que')||{}).value||''}}
+    else{if(!pf3.rutasEdit)pf3.rutasEdit={};var o3=pf3.rutasEdit[v]||{};o3.titulo=($('#re-t')||{}).value||'';o3.q=($('#re-q')||{}).value||'';pf3.rutasEdit[v]=o3}
+    BUS.editRuta='';Store.meta();render();toast('Ruta actualizada.');return}
+  if(a==='ruta-ed-base'){var pf4=S.meta.perfil;if(pf4.rutasEdit&&pf4.rutasEdit[v]){delete pf4.rutasEdit[v].q;delete pf4.rutasEdit[v].titulo}BUS.editRuta='';Store.meta();render();return}
+  if(a==='ruta-ocultar'){var pf5=S.meta.perfil;if(!pf5.rutasEdit)pf5.rutasEdit={};pf5.rutasEdit[v]=Object.assign({},pf5.rutasEdit[v]||{},{oculta:true});BUS.editRuta='';Store.meta();render();toast('Ruta oculta. Puedes volver a mostrarla abajo.');return}
+  if(a==='ruta-mostrar'){var pf6=S.meta.perfil;if(pf6.rutasEdit&&pf6.rutasEdit[v])pf6.rutasEdit[v].oculta=false;Store.meta();render();return}
   if(a==='rutas-admin'){hoja={tipo:'rutas-admin',nicho:'independiente'};pintaHoja();$('#hoja').scrollTop=0;return}
   if(a==='ra-nicho'){hoja.nicho=v;pintaHoja();return}
   if(a==='ra-guardar'){var nr={nicho:hoja.nicho,titulo:($('#ra-t')||{}).value||'',url:($('#ra-u')||{}).value||'',que:($('#ra-q')||{}).value||'',activa:true};
