@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.1 (21 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.3 (21 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -269,7 +269,7 @@ function digitos(t){return String(t||'').replace(/\D/g,'')}
 function waLink(p,txt){var d=digitos(p.telefono);return d.length>=8?'https://wa.me/'+d+(txt?'?text='+encodeURIComponent(txt):''):''}
 var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
 
-function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:''}}
+function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:'',preguntas:['','',''],rutas:[]}}
 var S={meta:{perfil:perfilVacio(),plan:null,hechas:{},metaDiaria:5},
        pros:{},tab:'hoy',filtro:'listo'};
 var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
@@ -310,7 +310,7 @@ var Store={colas:{},relojes:{},error:false,
     this.guardarLocal();
   }
 };
-function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5,busquedas:Array.isArray(m.busquedas)?m.busquedas:[],filtros:m.filtros||{},ultima:m.ultima||null,etapasMedio:Array.isArray(m.etapasMedio)?m.etapasMedio:undefined,nombresEtapa:m.nombresEtapa||{},seg:m.seg||{},mensajes:m.mensajes||{},perfiles:Array.isArray(m.perfiles)?m.perfiles:undefined,perfilActivo:m.perfilActivo||''}}
+function ponMeta(m){if(!m)return;var base=S.meta;S.meta={perfil:Object.assign({},base.perfil,m.perfil||{}),plan:m.plan||null,hechas:m.hechas||{},metaDiaria:Number(m.metaDiaria)||5,busquedas:Array.isArray(m.busquedas)?m.busquedas:[],filtros:m.filtros||{},ultima:m.ultima||null,etapasMedio:Array.isArray(m.etapasMedio)?m.etapasMedio:undefined,nombresEtapa:m.nombresEtapa||{},seg:m.seg||{},mensajes:m.mensajes||{},perfiles:Array.isArray(m.perfiles)?m.perfiles:undefined,perfilActivo:m.perfilActivo||'',gastoUsd:m.gastoUsd!=null?Number(m.gastoUsd):undefined}}
 function pintaEstado(){$('#estado').textContent=Store.error?'Sin guardar':'Mi cuenta';var bt=document.querySelector('.cuenta-btn');if(bt)bt.title=EMAIL||''}
 
 /* ---------- Pantallas de acceso ---------- */
@@ -377,7 +377,7 @@ async function iniciarSesion(sesion){
   if(!acc.ok){pantallaSinAcceso(acc.msg);return}
   UID=sesion.user.id;
   Store.leerLocal();mostrarApp(true);pintaEstado();render();
-  try{await Store.cargar();Store.error=false;restaurarUltima()}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
+  try{await Store.cargar();Store.error=false;restaurarUltima();await cargarRutasMentora()}catch(e){Store.error=true;toast('No se pudieron cargar tus datos. Revisa tu conexión.')}
   pintaEstado();render();
 }
 async function arrancar(){
@@ -534,29 +534,93 @@ function urlGratis(){
   var ex=comas(filtrosDe(canalActual()).excluir).slice(0,6).map(function(x){return ' -"'+x.replace(/"/g,'')+'"'}).join('');
   return 'https://www.google.com/search?q='+encodeURIComponent(pre+q+ex);
 }
+var ADMIN_EMAIL='conyenrione@gmail.com';
+var RUTAS_MENTORA=[];
+function esAdmin(){return String(EMAIL||'').toLowerCase()===ADMIN_EMAIL}
+async function cargarRutasMentora(){try{var r=await SB.from('pi_rutas').select('*');if(!r.error)RUTAS_MENTORA=r.data||[]}catch(e){}}
+function g(q){return 'https://www.google.com/search?q='+encodeURIComponent(q)}
+function palabraRuta(){return palabrasCliente()[0]||comas(S.meta.perfil.otrosTipos)[0]||'coach'}
+function rellenar(u){var L=lugares();return String(u||'').replace(/\{palabra\}/g,encodeURIComponent(palabraRuta())).replace(/\{lugar\}/g,encodeURIComponent(L[0]||''))}
+function rutasPerfil(){
+  var C=cats(),w=palabraRuta(),L=lugares(),lg=L[0]||'',q=(w+' '+lg).trim(),tag=aHashtag(w),R=[];
+  var ex=exclusionesFicha().slice(0,4).map(function(x){return ' -"'+x+'"'}).join('');
+  var indep=!C.length||C.indexOf('independiente')>-1,emp=C.indexOf('empresa')>-1,due=C.indexOf('duena')>-1,par=C.indexOf('particular')>-1;
+  RUTAS_MENTORA.filter(function(r){return r.activa!==false&&(!r.nicho||r.nicho==='*'||C.indexOf(r.nicho)>-1)}).forEach(function(r){R.push({id:'m'+r.id,ico:'★',titulo:r.titulo,que:r.que||'',meta:'Guarda 3',url:rellenar(r.url),mentora:true})});
+  if(indep||due)R.push({id:'maps',ico:'MAPS',titulo:'Google Maps',que:'Fichas de "'+w+'"'+(lg?' en '+lg:'')+' con teléfono, web o WhatsApp.',meta:'Guarda 5',url:'https://www.google.com/maps/search/'+encodeURIComponent(q)});
+  if(indep||due||par)R.push({id:'ig',ico:'IG',titulo:'Perfiles de Instagram',que:'Personas que se presentan como "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 5',url:g('site:instagram.com '+q+' -inurl:/p/ -inurl:/reel/'+ex)});
+  if(indep&&tag)R.push({id:'tag',ico:'#',titulo:'Hashtag #'+tag,que:'Publicaciones recientes: mira quién las publica.',meta:'Guarda 3',url:'https://www.instagram.com/explore/tags/'+tag+'/'});
+  if(indep)R.push({id:'dir',ico:'DIR',titulo:'Directorios de profesionales',que:'Páginas donde "'+w+'" se publicitan con nombre y contacto.',meta:'Guarda 3',url:g(w+' directorio '+lg+' contacto'+ex)});
+  if(emp||due)R.push({id:'li',ico:'IN',titulo:'Perfiles de LinkedIn',que:'Personas con el cargo "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 5',url:g('site:linkedin.com/in '+q+ex)});
+  if(emp)R.push({id:'li2',ico:'IN',titulo:'Búsqueda de personas en LinkedIn',que:'Necesitas tener sesión iniciada en LinkedIn.',meta:'Guarda 3',url:'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(q)});
+  if(indep||par)R.push({id:'fb',ico:'FB',titulo:'Facebook público',que:'Perfiles y páginas de "'+w+'"'+(lg?' en '+lg:'')+'.',meta:'Guarda 3',url:g('site:facebook.com '+q+ex)});
+  if(par)R.push({id:'fbg',ico:'FB',titulo:'Grupos de Facebook',que:'Grupos donde tu cliente pide ayuda.',meta:'Guarda 3',url:'https://www.facebook.com/search/groups/?q='+encodeURIComponent(w)});
+  (S.meta.perfil.rutas||[]).forEach(function(r,k){R.push({id:'u'+k,ico:'MÍA',titulo:r.titulo||'Mi ruta',que:r.que||'Tu ruta guardada',meta:'Guarda 3',url:rellenar(r.url),propia:k})});
+  return R}
+var COLOR_R={MAPS:['#E3F2EA','#1F7A4D'],IG:['#FBE4DC','#A3341A'],'#':['#EFE7F8','#4B168E'],DIR:['#FBEFD6','#7A5208'],IN:['#E6EEF7','#3B5B82'],FB:['#E6EEF7','#3B5B82'],'★':['#FBEFD6','#7A5208'],'MÍA':['#EFE7F8','#4B168E']};
+/* ---------- Créditos: cada persona tiene US$2,5 = 100 créditos ---------- */
+var PRESUPUESTO_USD=2.5,CREDITOS=100;
+function aCred(usd){return (Number(usd)||0)/PRESUPUESTO_USD*CREDITOS}
+function fCred(usd){var c=aCred(usd);return (c<10&&c>0?c.toFixed(1):Math.round(c)).toString().replace('.',',')}
+function gastadoUsd(){if(S.meta.gastoUsd==null)S.meta.gastoUsd=registro().reduce(function(a,r){return a+(Number(r.costo)||0)},0);return S.meta.gastoUsd}
+function saldoCred(){return Math.max(0,CREDITOS-aCred(gastadoUsd()))}
+function vSaldo(){var g=aCred(gastadoUsd()),q=saldoCred(),pc=Math.min(100,Math.round(g/CREDITOS*100));
+  return '<div class="panel" style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b>Tus créditos</b><span class="nota">Te quedan <b style="color:var(--morado)">'+fCred(q/CREDITOS*PRESUPUESTO_USD)+'</b> de '+CREDITOS+'</span></div>'+
+    '<div class="avance"><i style="width:'+pc+'%"></i></div><small class="nota">Has gastado '+fCred(gastadoUsd())+' créditos de '+CREDITOS+'. Una búsqueda de 10 personas usa entre 4 y 8 créditos.</small>'+
+    (q<=0?'<p class="error">Se acabaron tus créditos. Pídele más a tu mentora. Mientras, puedes usar la búsqueda gratis.</p>':q<10?'<p class="nota" style="color:var(--cal)">Te quedan pocos créditos.</p>':'')+'</div>'}
+function guardadosHoy(){return lista().filter(function(x){return x.origen==='gratis'&&x.creado===hoy()}).length}
 function vGratis(){
-  var donde=BUS.gratisDonde||canalActual(),sug=sugerenciasGratis(),u=urlGratis(),G=BUS.gr||null;
-  var h='<section class="sec"><p class="nota">Sin costo. Buscas en Google, copias los resultados y la app los ordena, separa a cada persona y le pone puntaje según tu perfil <b>'+esc(perfilAct().nombre)+'</b>.</p><div class="panel" style="display:flex;flex-direction:column;gap:12px">'+
-   '<b style="font-size:.9rem">1. Busca en Google</b>'+
-   (sug.length?'<div class="opcs">'+sug.map(function(t){return '<button type="button" class="opc" data-act="gratis-sug" data-v="'+esc(t)+'">'+esc(t)+'</button>'}).join('')+'</div>':'')+
-   '<label class="campo" for="gratis-q">Qué buscar<input type="text" id="gratis-q" data-gratis="1" value="'+esc(BUS.gratis||'')+'" placeholder="Por ejemplo: coach de vida México"></label>'+
-   '<div class="opcs" role="group" aria-label="Dónde buscar">'+[['instagram','Instagram'],['linkedin','LinkedIn'],['google','Toda la web']].map(function(o){return '<button type="button" class="opc" data-act="gratis-donde" data-v="'+o[0]+'" aria-pressed="'+(donde===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
-   '<div><a class="btn" id="gratis-ir" style="display:inline-flex;align-items:center;text-decoration:none'+(u?'':';opacity:.55;pointer-events:none')+'" href="'+esc(u||'#')+'" target="_blank" rel="noopener">Buscar en Google</a></div>'+
-   '<b style="font-size:.9rem">2. Copia y pega los resultados aquí</b>'+
-   '<p class="nota" style="margin:0">En la página de Google: mantén el dedo sobre el texto → <b>Seleccionar todo</b> → <b>Copiar</b>. Puedes pegar varias páginas, una tras otra.</p>'+
-   '<label class="campo" for="gr-txt"><span hidden>Resultados</span><textarea id="gr-txt" data-grtxt="1" style="min-height:120px" placeholder="Pega aquí lo que copiaste de Google">'+esc(BUS.grTxt||'')+'</textarea></label>'+
-   '<div><button class="btn" data-act="gr-ordenar">Ordenar y puntuar</button></div></div></section>';
-  if(G){
-    h+='<section class="sec"><h3>'+G.length+' personas encontradas</h3>'+(G.length?'<p class="nota">Ordenadas por puntaje según tu perfil. Revisa su perfil antes de agregarlas.</p>':'<p class="nota">No encontré perfiles en el texto pegado. Asegúrate de copiar la página de resultados de Google.</p>')+
-      '<div class="lista">'+G.map(function(r,i){var c=r.pts>=70?'cal':r.pts>=45?'tib':'fri';
-        var acc=r.hecho?'<span class="chip">'+esc(r.hecho)+'</span>':'<div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="gr-add" data-v="'+i+'">Agregar</button><button class="btn sec2" data-act="gr-despues" data-v="'+i+'">Revisar después</button><button class="btn sec2" data-act="gr-no" data-v="'+i+'">No calza</button></div>';
-        return '<div class="panel res"><b>'+esc(r.nombre)+' <span class="pt '+c+'">'+r.pts+' pts</span></b><div class="acc">'+acc+'</div>'+
-          '<span class="sub">'+(r.usuario?'@'+esc(r.usuario)+' · ':'')+CANALES[r.canal]+'</span><span class="sub">'+esc(r.texto.slice(0,220))+'</span>'+
-          (r.razones.length?'<span class="sub" style="color:var(--dorado);font-weight:600">'+esc(r.razones.join(' · '))+'</span>':'')+
-          '<div class="links" style="grid-column:1 / -1"><a href="'+esc(r.perfil)+'" target="_blank" rel="noopener">Ver perfil</a></div></div>'}).join('')+'</div></section>';
-  }
+  var R=rutasPerfil(),n=guardadosHoy(),ab=BUS.rutasAb||{};
+  var h='<section class="sec"><p class="nota">Sin costo. Abre una ruta, mira, y pega aquí los perfiles que te gusten. La app los ordena y los deja listos para seguir. Perfil: <b>'+esc(perfilAct().nombre)+'</b></p>'+
+   '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b>Tu sesión de hoy</b><span class="nota"><b style="color:var(--morado)">'+n+'</b> de 10 guardados</span></div>'+
+   '<div class="avance"><i style="width:'+Math.min(100,n*10)+'%"></i></div><div><button class="btn" data-act="gr-guardar">+ Guardar rápido</button></div></div></section>'+
+   '<section class="sec"><h3>Rutas para encontrar a tu cliente</h3><div class="lista">'+R.map(function(r){var c=COLOR_R[r.ico]||COLOR_R.DIR,on=!!ab[r.id];
+     return '<div class="fp"><div class="fp-f" style="align-items:flex-start"><span class="av" style="border-radius:12px;background:'+c[0]+';color:'+c[1]+';font-size:.7rem">'+esc(r.ico)+'</span>'+
+       '<div style="flex:1;min-width:0"><b style="font-size:.95rem">'+esc(r.titulo)+'</b>'+(r.mentora?' <span class="chip" style="background:#FBEFD6;color:#7A5208">Recomendada por tu mentora</span>':'')+
+       '<p class="nota" style="font-size:.83rem">'+esc(r.que)+'</p><small style="color:var(--dorado);font-weight:600">'+esc(r.meta)+'</small></div>'+
+       '<a class="ba'+(on?' sec2':'')+'" style="display:flex;align-items:center;text-decoration:none" href="'+esc(r.url)+'" target="_blank" rel="noopener" data-act="ruta-abrir" data-v="'+esc(r.id)+'" data-n="'+esc(r.titulo)+'">'+(on?'Abierta':'Abrir')+'</a>'+
+       (r.propia!=null?'<button type="button" class="ib" data-act="ruta-quitar" data-v="'+r.propia+'" aria-label="Quitar esta ruta">✕</button>':'')+'</div></div>'}).join('')+'</div>'+
+   (BUS.nuevaRuta?'<div class="panel" style="display:flex;flex-direction:column;gap:8px"><b>Mi ruta</b><label class="campo" for="nr-t">Nombre<input type="text" id="nr-t" placeholder="Ej: Comentarios de @cuenta.referente"></label>'+
+     '<label class="campo" for="nr-u">Enlace<input type="url" id="nr-u" placeholder="https://"></label><label class="campo" for="nr-q">Qué vas a encontrar<input type="text" id="nr-q" placeholder="Ej: Personas que comentan sus publicaciones"></label>'+
+     '<div class="fila"><button class="btn" data-act="ruta-guardar">Guardar ruta</button><button class="btn sec2" data-act="ruta-nueva">Cancelar</button></div></div>':
+     '<button type="button" class="btn sec2" data-act="ruta-nueva" style="border-style:dashed">+ Agregar mi propia ruta (cuenta referente, grupo, directorio)</button>')+'</section>';
   return h;
 }
+/* ---------- Guardar rápido: reconoce perfiles, fichas, WhatsApp y correos ---------- */
+function reconocer(txt){var out=[];
+  String(txt||'').split(/\n/).map(function(l){return l.trim()}).filter(Boolean).forEach(function(l){
+    var url=(l.match(/(https?:\/\/\S+|(?:www\.)?(?:instagram|linkedin|facebook|maps\.app\.goo|goo\.gl)\.\S+)/i)||[])[0]||'',resto=l.replace(url,'').replace(/[-–|·:,]+\s*$/,'').trim();
+    var u=url&&!/^https?:/i.test(url)?'https://'+url:url,m;
+    if(u&&(m=u.match(/instagram\.com\/([A-Za-z0-9._]{2,30})/i))&&!/^(p|reel|reels|explore|stories)$/i.test(m[1]))return out.push({canal:'instagram',nombre:resto||m[1],perfil:'https://www.instagram.com/'+m[1]+'/',tipo:'Perfil de Instagram',ico:'IG',notas:'@'+m[1]});
+    if(u&&(m=u.match(/linkedin\.com\/in\/([^/?#]+)/i)))return out.push({canal:'linkedin',nombre:resto||decodeURIComponent(m[1]).replace(/-[a-z0-9]{6,}$/i,'').replace(/-/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()}),perfil:'https://www.linkedin.com/in/'+m[1]+'/',tipo:'Perfil de LinkedIn',ico:'IN'});
+    if(u&&/facebook\.com/i.test(u))return out.push({canal:'facebook',nombre:resto||(u.match(/facebook\.com\/([^/?#]+)/i)||[])[1]||'Perfil de Facebook',perfil:u,tipo:'Facebook',ico:'FB'});
+    if(u&&/(google\.[a-z.]+\/maps|maps\.app\.goo|goo\.gl\/maps)/i.test(u))return out.push({canal:'otro',nombre:resto||'Ficha de Google Maps',link:u,tipo:'Ficha de Google Maps',ico:'MAPS'});
+    if(u)return out.push({canal:'otro',nombre:resto||u.replace(/^https?:\/\/(www\.)?/,'').split('/')[0],link:u,tipo:'Página web',ico:'WEB'});
+    if((m=l.match(/[\w.+-]+@[\w-]+\.[\w.]+/)))return out.push({canal:'otro',nombre:l.replace(m[0],'').trim()||m[0],tipo:'Correo',ico:'@',notas:'Correo: '+m[0]});
+    if((m=l.match(/\+?\d[\d\s().-]{7,}\d/)))return out.push({canal:'whatsapp',nombre:l.replace(m[0],'').replace(/[,;]/g,'').trim()||m[0].trim(),telefono:m[0].trim(),tipo:'WhatsApp',ico:'WA'});
+    out.push({canal:'otro',nombre:l.slice(0,80),tipo:'Nombre',ico:'?'})});
+  return out}
+function hojaGuardar(){var d=hoja;
+  return '<div class="barra"><button data-act="cerrar">‹ Volver a las rutas</button><span class="nota"><b>'+guardadosHoy()+'</b> de 10</span></div><div class="wrap"><section class="sec"><h2>Guardar rápido</h2>'+
+   '<p class="nota">Pega lo que encontraste: un perfil de Instagram, LinkedIn o Facebook, una ficha de Google Maps, una web, un WhatsApp o un correo. Uno por línea. Si quieres, escribe el nombre antes del enlace.</p>'+
+   (d.ruta?'<p class="nota">Desde la ruta: <b>'+esc(d.ruta)+'</b></p>':'')+
+   '<label class="campo" for="gq-txt"><span hidden>Lo que encontraste</span><textarea id="gq-txt" style="min-height:130px" placeholder="Ej: instagram.com/lorena.sanacion&#10;Ana Pérez +56 9 1234 5678">'+esc(d.texto||'')+'</textarea></label>'+
+   '<div><button class="btn" data-act="gq-ok">Reconocer y guardar</button></div></section>'+
+   (d.hechos&&d.hechos.length?'<section class="sec"><h3>La app reconoció '+d.hechos.length+'</h3><div class="lista">'+d.hechos.map(function(x){var c=COLOR_R[x.ico]||COLOR_R.DIR;
+     return '<div class="fp"><div class="fp-f"><span class="av" style="border-radius:12px;background:'+c[0]+';color:'+c[1]+';font-size:.7rem">'+esc(x.ico)+'</span><div style="flex:1;min-width:0"><b>'+esc(x.nombre)+'</b><p class="nota">'+esc(x.tipo)+'</p></div><span class="chip">'+(x.ya?'Ya estaba':esc(nombreFija('revisar')))+'</span></div></div>'}).join('')+'</div>'+
+     '<p class="nota">Puedes cambiarles el nombre después, en su ficha.</p><div class="trio" style="grid-template-columns:1fr 1fr"><button type="button" data-act="cerrar">Seguir buscando</button><button type="button" class="si" data-act="revisar-ir">Calificarlas ahora</button></div></section>':'')+'</div>'}
+function guardarRapido(){var t=$('#gq-txt'),txt=t?t.value:'',R=reconocer(txt);if(!R.length){toast('Pega al menos un perfil, número o enlace.');return}
+  var hechos=[];R.forEach(function(r){var dup=lista().filter(function(p){return (r.perfil&&p.perfil&&p.perfil.toLowerCase()===r.perfil.toLowerCase())||(r.telefono&&digitos(p.telefono).slice(-8)===digitos(r.telefono).slice(-8))||(r.link&&p.link===r.link)})[0];
+    if(dup){hechos.push(Object.assign({},r,{ya:true}));return}
+    var np=normal({id:nuevoId(),nombre:r.nombre,canal:r.canal,perfil:r.perfil||'',link:r.link||r.perfil||'',telefono:r.telefono||'',notas:r.notas||'',origen:'gratis',estado:'revisar',grupo:'nueva',
+      etiquetas:hoja.ruta?[hoja.ruta]:[],perfilId:S.meta.perfilActivo||''});
+    anota(np,'Guardado desde búsqueda gratis'+(hoja.ruta?' ('+hoja.ruta+')':''));S.pros[np.id]=np;hechos.push(r)});
+  Store.muchos(hechos.filter(function(x){return !x.ya}).length?lista().filter(function(p){return p.origen==='gratis'&&p.creado===hoy()}):[]);
+  hoja.texto='';hoja.hechos=hechos;pintaHoja();render();toast(hechos.filter(function(x){return !x.ya}).length+' guardados en '+nombreFija('revisar')+'.')}
+/* ---------- Las 3 preguntas para calificar (se definen en cada perfil) ---------- */
+function preguntasBase(){var C=cats(),w=palabraRuta(),si=senalesSi();
+  var q2=si.length?'¿Muestra señales como "'+si.slice(0,2).join('" o "')+'"?':C.indexOf('empresa')>-1?'¿Tiene equipo a cargo?':C.indexOf('duena')>-1?'¿Tiene un negocio activo con clientes?':C.indexOf('particular')>-1?'¿Habla del problema que tú resuelves?':'¿Muestra que vende sesiones o servicios?';
+  return ['¿Se presenta como '+w+'?',q2,'¿Es una persona, no una empresa u organización?']}
+function preguntas(){var p=S.meta.perfil.preguntas||[],b=preguntasBase();return [0,1,2].map(function(i){return String(p[i]||'').trim()||b[i]})}
 /* ---------- Búsqueda gratis: separa personas del texto de Google y les pone puntaje ---------- */
 function parsearGoogle(txt){
   var L=String(txt||'').split(/\n/).map(function(x){return x.trim()}).filter(Boolean),marcas=[];
@@ -597,12 +661,13 @@ function vDescartados(){var r=BUS.resumen;if(!r||!r.descartados||!r.descartados.
   var D=r.descartados.filter(function(x){return typeof x==='string'}),gratis=D.filter(function(x){return /sin costo/.test(x)}).length,leidos=D.length-gratis;
   return '<p class="nota">Se revisaron '+(r.encontrados||'')+' perfiles y se descartaron '+r.descartados.length+'.'+(r.reglas&&r.reglas.porRegla?' '+r.reglas.porRegla+' los frenaron las reglas de la app.':'')+'</p>'+
     (D.length?'<details class="grp"><summary>Ver descartados y por qué <span class="cnt">'+D.length+'</span></summary>'+
-    '<p class="nota">'+(gratis?gratis+' se descartaron sin costo, antes de abrirlos. ':'')+(leidos?leidos+' se descartaron después de leer su perfil: esos sí se cobran (centavos).':'')+'</p>'+
+    '<p class="nota">'+(gratis?gratis+' se descartaron sin costo, antes de abrirlos. ':'')+(leidos?leidos+' se descartaron después de leer su perfil: esos sí usan créditos.':'')+'</p>'+
     '<ul class="senales">'+D.map(function(x){var m=/^@([\w.]+)/.exec(x);return '<li>'+(m?'<a href="https://www.instagram.com/'+esc(m[1])+'/" target="_blank" rel="noopener">@'+esc(m[1])+'</a>'+esc(x.slice(m[0].length)):esc(x))+'</li>'}).join('')+'</ul></details>':'')}
 function yaEsta(r){var u=String(r.perfil||'').toLowerCase().replace(/\/$/,'');return lista().some(function(p){return [p.perfil,p.link].some(function(x){return x&&String(x).toLowerCase().replace(/\/$/,'')===u})})}
 async function buscarAuto(){
   if(!CFG.puente){toast('Falta la dirección del puente de búsqueda.');return}
   var canal=BUS.canal||((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||'instagram');
+  if(saldoCred()<=0){toast('Se acabaron tus créditos. Pídele más a tu mentora.');return}
   var textos=busquedasListas(canal);
   if(busquedasMalas(canal).length){BUS.paso='validar';render();toast('Hay búsquedas de una sola palabra. Agrega más palabras o tu país antes de buscar.');return}
   if(!textos.length){toast('Primero completa tu cliente ideal en Perfil.');return}
@@ -616,6 +681,7 @@ async function buscarAuto(){
     BUS.resultados=ordenarPorSenales(d.resultados);BUS.resumen=d.resumen||null;BUS.marca={};BUS.abierto=-1;
     var rg={id:nuevoId(),fecha:hoy(),canal:canal,pedidos:BUS.cantidad,encontrados:BUS.resultados.length,
       revisados:(d.resumen&&d.resumen.encontrados)||BUS.resultados.length,costo:Number(d.costoUsd)||0,agregados:0,noCalza:{}};
+    S.meta.gastoUsd=gastadoUsd()+(Number(d.costoUsd)||0);
     registro().unshift(rg);if(registro().length>80)registro().length=80;BUS.reg=rg.id;BUS.fechaRes=hoy();guardarUltima();
   }catch(e){BUS.error=/Failed to fetch|NetworkError|Load failed/i.test(String(e.message))?'Se cortó la conexión mientras buscaba. Inténtalo de nuevo.':String(e.message);restaurarUltima()}
   BUS.cargando=false;render();
@@ -651,7 +717,7 @@ function vBusqueda(){
      (hs?'<li>Apify busca en Instagram las publicaciones recientes con tus hashtags.</li>':'<li>Google busca en '+CANALES[c]+' páginas que tengan <b>todas</b> las palabras de cada línea, en cualquier parte'+(c==='instagram'?' que elegiste arriba':'')+'. Ej: "coach Latinoamérica" trae perfiles o publicaciones donde aparecen "coach" y "Latinoamérica".</li>')+
      (c==='instagram'?'<li>Para cada persona encontrada, Apify abre su perfil y lee su bio y seguidores (esto es lo que más cuesta).</li>':'')+
      '<li>La app descarta organizaciones, competencia y lo que pusiste en "Excluir", y te muestra a quienes calzan, con los descartados y su motivo.</li></ol></details>'+
-   vFiltros()+'<p class="costo">'+(regActual()&&regActual().costo?'Esta búsqueda costó US$'+regActual().costo.toFixed(3)+'. ':'')+'Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
+   vFiltros()+vSaldo()+'<p class="costo">'+(regActual()&&regActual().costo?'Tu última búsqueda usó '+fCred(regActual().costo)+' créditos. ':'')+'Esta búsqueda usará aprox. '+(BUS.cantidad<=5?'2 a 4':BUS.cantidad<=10?'4 a 8':'8 a 16')+' créditos. Tarda entre 2 y 5 minutos.</p>'+
    (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+
      '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+(canalActual()==='instagram'?' · busca en: '+(MODOS_IG.filter(function(m){return m[0]===modoIG()})[0]||MODOS_IG[0])[1].toLowerCase():'')+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+(esHashtag(canalActual())?'#':'')+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
      (busquedasMalas(canalActual()).length?'<p class="error">Una sola palabra trae marcas, gimnasios y cuentas al azar, y igual se cobra. Escribe búsquedas de 2 a 4 palabras (ej: "coach de vida Chile") o agrega tu país en Mi cliente.</p>':'')+'</div>'+
@@ -999,13 +1065,13 @@ function vCostos(){
   R.forEach(function(r){var no=0;for(var k in r.noCalza){no+=r.noCalza[k];mot[k]=(mot[k]||0)+r.noCalza[k]}
     var c=porCanal[r.canal]=porCanal[r.canal]||{b:0,enc:0,ag:0,no:0,costo:0};
     [tot,c].forEach(function(x){x.b++;x.enc+=r.encontrados;x.ag+=r.agregados;x.no+=no;x.costo+=r.costo||0})});
-  function usd(n){return 'US$'+n.toFixed(3)}
+  function usd(n){return fCred(n)+' cr.'}
   function fila(nom,x){var rev=x.ag+x.no;return '<tr><td>'+nom+'</td><td>'+x.b+'</td><td>'+x.enc+'</td><td>'+x.ag+'</td><td>'+(rev?Math.round(x.no/rev*100)+'%':'—')+'</td><td>'+usd(x.costo)+'</td><td>'+(x.ag?usd(x.costo/x.ag):'—')+'</td></tr>'}
-  var h='<section class="sec"><h3>Búsquedas automáticas</h3><p class="nota">Cuánto cuestan y qué tan certeras son. "No calzan" se calcula sobre los resultados que revisaste.</p>'+
-   '<div class="panel tabla"><table><tr><th>Canal</th><th>Búsquedas</th><th>Encontrados</th><th>Agregados</th><th>No calzan</th><th>Costo</th><th>Por agregado</th></tr>'+
+  var h='<section class="sec"><h3>Búsquedas automáticas</h3><p class="nota">Cuántos créditos usan y qué tan certeras son. "No calzan" se calcula sobre los resultados que revisaste.</p>'+vSaldo()+
+   '<div class="panel tabla"><table><tr><th>Canal</th><th>Búsquedas</th><th>Encontrados</th><th>Agregados</th><th>No calzan</th><th>Créditos</th><th>Por agregado</th></tr>'+
    Object.keys(porCanal).map(function(k){return fila(CANALES[k]||k,porCanal[k])}).join('')+(Object.keys(porCanal).length>1?fila('<b>Total</b>',tot):'')+'</table></div>';
   if(tot.no)h+='<div class="panel"><b>Por qué no calzan</b><ul class="senales">'+MOTIVOS.filter(function(m){return mot[m[0]]}).map(function(m){return '<li>'+m[1]+': '+mot[m[0]]+'</li>'}).join('')+'</ul></div>';
-  h+='<div class="panel tabla"><table><tr><th>Fecha</th><th>Canal</th><th>Encontrados</th><th>Agregados</th><th>Costo</th></tr>'+
+  h+='<div class="panel tabla"><table><tr><th>Fecha</th><th>Canal</th><th>Encontrados</th><th>Agregados</th><th>Créditos</th></tr>'+
    R.slice(0,10).map(function(r){return '<tr><td>'+esc(r.fecha)+'</td><td>'+(CANALES[r.canal]||r.canal)+'</td><td>'+r.encontrados+'</td><td>'+r.agregados+'</td><td>'+usd(r.costo||0)+'</td></tr>'}).join('')+'</table></div></section>';
   return h;
 }
@@ -1079,6 +1145,9 @@ function vPerfil(){
    bloque(6,'¿Dónde está?','',campo('lugar','País o ciudad','Puedes poner varios separados con comas. Ej: Chile, Argentina, México.'))+
    bloque(7,'Señales de que SÍ es tu cliente','Si su perfil dice esto, la app la pone primero y te lo marca.',campo('senalesSi','Palabras que te dicen que sí','Separa con comas.')+sugPalabras('senalesSi',sugSi))+
    bloque(8,'¿Quién NO es?','La app los saca antes de mostrártelos.',opcs('noQuiero',deCategoria(NO_QUIERO),true)+campo('noQuieroTxt','Otras palabras que no quieres ver','Separa con comas.'))+
+   bloque(9,'Tus 3 preguntas para calificar','Las respondes con sí o no al revisar a cada persona, y con eso la app le pone puntaje. La app te propone unas según tu ficha: cámbialas si quieres.',
+     [0,1,2].map(function(i){var b=preguntasBase()[i];return '<label class="campo" for="pq-'+i+'">Pregunta '+(i+1)+'<input type="text" id="pq-'+i+'" data-pq="'+i+'" placeholder="'+esc(b)+'" value="'+esc((p.preguntas||[])[i]||'')+'"></label>'}).join('')+
+     '<p class="nota" style="margin:0">Si dejas una vacía, se usa la que propone la app.</p>')+
    '<label class="check" for="pf-base"><input type="checkbox" id="pf-base" data-f="baseLista"'+(p.baseLista?' checked':'')+'><span>Ya contacté a casi todos mis conocidos por WhatsApp</span></label>'+
    '<label class="campo" for="pf-meta">Mensajes por día<small>Tu tope diario. Pocos y bien elegidos.</small><input type="number" id="pf-meta" data-meta="1" min="1" max="30" inputmode="numeric" value="'+esc(S.meta.metaDiaria)+'"></label>'+
    '<div><button class="btn" data-act="plan"'+(ocupada==='plan'?' disabled':'')+'>'+(ocupada==='plan'?'Pensando…':pl?'Guardar y actualizar mis búsquedas':'Crear mi radar')+'</button></div>'+
@@ -1105,6 +1174,8 @@ function pintaHoja(){
   if(hoja.tipo==='importar'){el.innerHTML=hojaImportar();return}
   if(hoja.tipo==='cuenta'){el.innerHTML=hojaCuenta();return}
   if(hoja.tipo==='revisar'){el.innerHTML=hojaRevisar();return}
+  if(hoja.tipo==='guardar'){el.innerHTML=hojaGuardar();return}
+  if(hoja.tipo==='rutas-admin'){el.innerHTML=hojaRutasAdmin();return}
   if(hoja.tipo==='proceso'){el.innerHTML=hojaProceso();return}
   if(hoja.tipo==='nuevo'){var d=hoja.d;
     el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap">'+
@@ -1177,7 +1248,12 @@ function hojaRevisar(){var d=hoja,id=d.cola[d.i],p=id&&S.pros[id];
     '<div style="flex:1;min-width:0"><h2 style="font-size:1.25rem">'+esc(p.nombre)+'</h2><p class="nota">'+esc(usu||CANALES[p.canal])+'</p></div>'+(p.calificado?insignia(p):'')+'</div>'+
     '<p style="line-height:1.5">'+esc(bio.join(' ').slice(0,400)||'Sin descripción.')+'</p>'+
     (p.motivo?'<div style="background:var(--dorado-suave,#FBF6EC);border-radius:12px;padding:10px 12px"><small class="nota" style="font-weight:600;text-transform:uppercase">Por qué calzaría</small><p style="font-size:.9rem">'+esc(p.motivo.replace(/^Puntaje automático:\s*/,''))+'</p></div>':'')+
-    linksPerfil(p)+'</section>'+
+    linksPerfil(p)+(p.link&&!/instagram|linkedin|facebook/.test(p.link)?'<div class="links"><a href="'+esc(p.link)+'" target="_blank" rel="noopener">Abrir enlace</a></div>':'')+'</section>'+
+    '<section class="sec"><b>Mira su perfil y responde:</b>'+preguntas().map(function(q,k){var r=(d.resp||{})[k];
+      return '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><span>'+esc(q)+'</span><div class="trio" style="grid-template-columns:1fr 1fr">'+
+        '<button type="button" data-act="rev-q" data-v="'+k+'" data-m="1"'+(r===true?' class="si"':'')+' style="min-height:44px">Sí</button><button type="button" data-act="rev-q" data-v="'+k+'" data-m="0"'+(r===false?' style="min-height:44px;background:#5E5470;color:#fff"':' style="min-height:44px"')+'>No</button></div></div>'}).join('')+
+      (function(){var R=d.resp||{},n=Object.keys(R).length,si=Object.keys(R).filter(function(k){return R[k]}).length;if(!n)return '';var pt=Math.round(si/3*100);
+        return '<div class="panel" style="display:flex;justify-content:space-between;align-items:center"><span>'+(si===3?'Calza muy bien.':si===2?'Podría calzar.':'Probablemente no calza.')+'</span><b class="pt '+(pt>=70?'cal':pt>=45?'tib':'fri')+'">'+pt+' pts</b></div>'})()+'</section>'+
     (d.motivo?'<section class="sec"><b>¿Por qué no calza?</b><div class="opcs">'+MOTIVOS.map(function(m){return '<button type="button" class="opc" data-act="rev-motivo" data-v="'+m[0]+'">'+m[1]+'</button>'}).join('')+'<button type="button" class="opc" data-act="rev-motivo" data-v="otro">Saltar</button></div></section>':
     '<div class="trio"><button type="button" class="no" data-act="rev" data-v="no">✕<br>No calza</button><button type="button" data-act="rev" data-v="des">❙❙<br>Después</button><button type="button" class="si" data-act="rev" data-v="si">✓<br>Calza</button></div>')+'</div>'}
 
@@ -1192,6 +1268,16 @@ function linksPerfil(p){
   if(ok.test(p.link)&&p.link!==perfil)L.push(['Ver dónde la encontré',p.link]);
   return L.length?'<div class="links">'+L.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener">'+l[0]+'</a>'}).join('')+'</div>':'';
 }
+/* ---------- Rutas recomendadas (solo mentora) ---------- */
+function hojaRutasAdmin(){var n=hoja.nicho,R=RUTAS_MENTORA.filter(function(r){return r.nicho===n});
+  return '<div class="barra"><button data-act="cerrar">‹ Volver</button><span class="nota">Solo para la mentora</span></div><div class="wrap"><section class="sec"><h2>Rutas recomendadas</h2>'+
+   '<p class="nota">Las rutas que cargas aquí les aparecen a tus alumnos según su tipo de cliente, marcadas como "Recomendada por tu mentora". En el enlace puedes usar {palabra} y {lugar}: la app los cambia por los de cada alumno.</p>'+
+   '<div class="opcs">'+CATEGORIAS.map(function(c){return '<button type="button" class="opc" data-act="ra-nicho" data-v="'+c[0]+'" aria-pressed="'+(n===c[0])+'">'+esc(c[1])+'</button>'}).join('')+'</div></section>'+
+   '<section class="sec"><div class="lista">'+(R.length?R.map(function(r){var on=r.activa!==false;return '<div class="panel" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div style="min-width:0"><b>'+esc(r.titulo)+'</b><p class="nota">'+esc(r.que||'')+'</p><small class="nota" style="overflow-wrap:anywhere">'+esc(r.url)+'</small></div>'+
+     '<button type="button" class="ba'+(on?'':' sec2')+'" data-act="ra-toggle" data-v="'+esc(String(r.id))+'">'+(on?'Visible':'Oculta')+'</button></div>'}).join(''):'<p class="nota">Aún no hay rutas para este tipo de cliente.</p>')+'</div></section>'+
+   '<section class="sec panel"><b>Agregar ruta</b><label class="campo" for="ra-t">Nombre<input type="text" id="ra-t" placeholder="Ej: Directorio de terapeutas"></label>'+
+   '<label class="campo" for="ra-u">Enlace<input type="url" id="ra-u" placeholder="https://www.google.com/maps/search/{palabra} {lugar}"></label>'+
+   '<label class="campo" for="ra-q">Qué van a encontrar<input type="text" id="ra-q" placeholder="Ej: Terapeutas con nombre y WhatsApp"></label><div><button class="btn" data-act="ra-guardar">Guardar ruta</button></div></section></div>'}
 /* ---------- Mi cuenta ---------- */
 function hojaCuenta(){
   return '<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap">'+
@@ -1199,6 +1285,7 @@ function hojaCuenta(){
    '<section class="sec"><h3>Contraseña</h3>'+
    '<label class="campo" for="nueva-clave">Nueva contraseña<small>Mínimo 6 caracteres.</small><input type="password" id="nueva-clave" autocomplete="new-password"></label>'+
    '<div><button class="btn" data-act="cambiar-clave">Guardar contraseña nueva</button></div></section>'+
+   (esAdmin()?'<section class="sec"><h3>Mentora</h3><div><button class="btn sec2" data-act="rutas-admin">Rutas recomendadas para alumnos</button></div></section>':'')+
    '<section class="sec"><h3>Respaldo</h3>'+
    '<label class="campo" for="importar">Importar datos<small>Para traer prospectos desde un archivo de respaldo (.json).</small><input type="file" id="importar" accept=".json,application/json"></label></section>'+
    '<section class="sec"><div class="fila">'+(conexionFija()?'':'<button class="btn sec2" data-act="ac-conexion">Cambiar conexión</button>')+
@@ -1296,15 +1383,33 @@ document.addEventListener('click',function(ev){
   if(a==='hoy-hecho'){var ph=S.pros[v];if(!ph)return;var m0=b.dataset.m;if(m0==='enviada'&&!ph.mensaje)ph.mensaje=mensajeBase(ph);if(m0==='seguimiento'&&!ph.mensajeSeg)ph.mensajeSeg=mensajeBase(ph);
     mover(ph,m0);render();toast(m0==='enviada'?'¡Bien! Te aviso en '+seg().primero+' días si no responde.':ph.estado==='descanso'?'Sin respuesta: queda descansando hasta el '+ph.proximoSeg+'.':m0==='retomar'?'Vuelve a Por contactar.':'Anotado. Próximo seguimiento el '+ph.proximoSeg+'.');return}
   if(a==='revisar-ir'){var cola=colaRevisar(v);if(!cola.length){toast('No hay nadie por revisar.');return}hoja={tipo:'revisar',cola:cola,i:0,c:{si:0,des:0,no:0},motivo:false};pintaHoja();$('#hoja').scrollTop=0;return}
-  if(a==='rev'){var pr=S.pros[hoja.cola[hoja.i]];if(!pr)return;if(v==='no'){hoja.motivo=true;pintaHoja();return}
-    if(v==='si')mover(pr,'calza');hoja.c[v]++;hoja.i++;pintaHoja();render();return}
-  if(a==='rev-motivo'){var pr2=S.pros[hoja.cola[hoja.i]];if(pr2)mover(pr2,'nocalza:'+v);hoja.c.no++;hoja.i++;hoja.motivo=false;pintaHoja();render();return}
+  if(a==='rev-q'){hoja.resp=hoja.resp||{};hoja.resp[v]=b.dataset.m==='1';pintaHoja();return}
+  if(a==='rev'){var pr=S.pros[hoja.cola[hoja.i]];if(!pr)return;
+    var RR=hoja.resp||{},nr=Object.keys(RR).length;if(nr){var sí=Object.keys(RR).filter(function(k){return RR[k]}).length,vv=Math.round(sí/3*5);pr.n=vv;pr.a=vv;pr.c=vv;pr.calificado=true;
+      pr.respuestas=preguntas().map(function(q,k){return q+' '+(RR[k]===true?'Sí':RR[k]===false?'No':'—')});pr.motivo='Preguntas: '+pr.respuestas.join(' · ');Store.pro(pr)}
+    if(v==='no'){hoja.motivo=true;pintaHoja();return}
+    if(v==='si')mover(pr,'calza');hoja.c[v]++;hoja.i++;hoja.resp={};pintaHoja();render();return}
+  if(a==='rev-motivo'){var pr2=S.pros[hoja.cola[hoja.i]];if(pr2)mover(pr2,'nocalza:'+v);hoja.c.no++;hoja.i++;hoja.motivo=false;hoja.resp={};pintaHoja();render();return}
   if(a==='menu-p'){S.menuP=S.menuP===v?'':v;var lp0=$('#lista-pros');if(lp0)lp0.innerHTML=listaPros();else render();return}
   if(a==='mover-a'){var pm=S.pros[v];if(pm){irEtapa(pm,b.dataset.m);S.menuP='';render();toast('Movida a '+nombreEtapa(pm.estado)+'.')}return}
   if(a==='grupo-a'){var pg2=S.pros[v];if(pg2){pg2.grupo=b.dataset.m;anota(pg2,'Grupo: '+nombreGrupo(pg2.grupo));Store.pro(pg2);var lp1=$('#lista-pros');if(lp1)lp1.innerHTML=listaPros()}return}
   if(a==='bus-vista'){BUS.vista=v;render();return}
   if(a==='bus-canal'){BUS.canal=v;BUS.paso='';render();return}
   if(a==='bus-modo'){BUS.modo=v;BUS.paso='';render();return}
+  if(a==='gr-guardar'){hoja={tipo:'guardar',ruta:BUS.rutaUlt||'',texto:'',hechos:[]};pintaHoja();$('#hoja').scrollTop=0;return}
+  if(a==='gq-ok'){guardarRapido();return}
+  if(a==='ruta-abrir'){BUS.rutasAb=BUS.rutasAb||{};BUS.rutasAb[v]=true;BUS.rutaUlt=b.dataset.n||'';setTimeout(render,300);return}
+  if(a==='ruta-nueva'){BUS.nuevaRuta=!BUS.nuevaRuta;render();return}
+  if(a==='ruta-guardar'){var rt={titulo:($('#nr-t')||{}).value||'',url:($('#nr-u')||{}).value||'',que:($('#nr-q')||{}).value||''};if(!/^https?:\/\//.test(rt.url)){toast('Pega un enlace que empiece con https://');return}
+    if(!Array.isArray(S.meta.perfil.rutas))S.meta.perfil.rutas=[];S.meta.perfil.rutas.push(rt);BUS.nuevaRuta=false;Store.meta();render();toast('Ruta guardada en este perfil.');return}
+  if(a==='ruta-quitar'){(S.meta.perfil.rutas||[]).splice(Number(v),1);Store.meta();render();return}
+  if(a==='rutas-admin'){hoja={tipo:'rutas-admin',nicho:'independiente'};pintaHoja();$('#hoja').scrollTop=0;return}
+  if(a==='ra-nicho'){hoja.nicho=v;pintaHoja();return}
+  if(a==='ra-guardar'){var nr={nicho:hoja.nicho,titulo:($('#ra-t')||{}).value||'',url:($('#ra-u')||{}).value||'',que:($('#ra-q')||{}).value||'',activa:true};
+    if(!nr.titulo||!/^https?:\/\//.test(nr.url)){toast('Falta el nombre o un enlace con https://');return}
+    SB.from('pi_rutas').insert(nr).then(function(r){if(r.error)throw r.error;return cargarRutasMentora()}).then(function(){pintaHoja();toast('Ruta guardada para tus alumnos.')}).catch(function(){toast('No se pudo guardar. ¿Corriste el SQL de rutas en Supabase?')});return}
+  if(a==='ra-toggle'){var rr=RUTAS_MENTORA.filter(function(x){return String(x.id)===v})[0];if(!rr)return;
+    SB.from('pi_rutas').update({activa:rr.activa===false}).eq('id',rr.id).then(function(r){if(r.error)throw r.error;return cargarRutasMentora()}).then(function(){pintaHoja()}).catch(function(){toast('No se pudo cambiar.')});return}
   if(a==='gr-ordenar'){var tg=$('#gr-txt');if(tg)BUS.grTxt=tg.value;ordenarGratis();return}
   if(a==='gr-add'){agregarGratis(Number(v),false);toast('Agregado a tu lista.');return}
   if(a==='gr-despues'){agregarGratis(Number(v),true);toast('Guardado en Por revisar.');return}
@@ -1401,6 +1506,7 @@ document.addEventListener('input',function(ev){
   if(ds.em){var M=editMedio(),it=M[Number(ds.i)];if(!it)return;it[ds.em]=ds.em==='fecha'?t.checked:ds.em==='dias'?Math.max(0,Math.round(Number(t.value)||0)):t.value;Store.meta();return}
   if(ds.seg){var nv=Math.round(Number(t.value));if(nv>=1){if(!S.meta.seg)S.meta.seg={};S.meta.seg[ds.seg]=nv;Store.meta()}return}
   if(ds.msj){if(!S.meta.mensajes)S.meta.mensajes={};S.meta.mensajes[ds.msj]=t.value;Store.meta();return}
+  if(ds.pq){if(!Array.isArray(S.meta.perfil.preguntas))S.meta.perfil.preguntas=['','',''];S.meta.perfil.preguntas[Number(ds.pq)]=t.value;Store.meta();return}
   if(ds.pnombre){perfilAct().nombre=t.value;Store.meta();return}
   if(ds.f){S.meta.perfil[ds.f]=t.type==='checkbox'?t.checked:t.value;Store.meta()}
   else if(ds.meta){var n=Math.round(Number(t.value));if(n>=1&&n<=30){S.meta.metaDiaria=n;Store.meta()}}
