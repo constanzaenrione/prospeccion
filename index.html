@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 2.9 (20 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.1 (21 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -133,6 +133,46 @@ ul.senales{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem;display
 .mini button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;min-height:36px}
 .histo{margin:0;padding-left:18px;font-size:.86rem;color:var(--muted)}
 .btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.fp{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column}
+.fp-f{display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px}
+.fp-n{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;text-align:left;padding:0;color:inherit}
+.fp-n b{display:block;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-n small{display:block;font-size:.8rem;color:var(--muted)}
+.av{width:40px;height:40px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.9rem;flex:none}
+.ib{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;border:1px solid var(--line);background:var(--surface);color:var(--morado);font-weight:700}
+.ib.wa{background:#E3F2EA;border-color:#E3F2EA}
+.ib svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ba{height:44px;border-radius:12px;background:var(--morado);color:var(--sobre-morado);border:0;padding:0 12px;font-weight:600;font-size:.88rem;flex:none}
+.ba.sec2{background:var(--surface);color:var(--morado);border:1px solid var(--line)}
+.fp-menu{border-top:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.desp{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.desp>summary{list-style:none;cursor:pointer;padding:14px;display:flex;justify-content:space-between;align-items:center;font-weight:600;min-height:56px;box-sizing:border-box}
+.desp>summary::-webkit-details-marker{display:none}
+.desp .cnt2{background:var(--morado-suave);color:var(--morado);border-radius:999px;padding:3px 11px;font-size:.88rem}
+.desp .cuerpo{border-top:1px solid var(--line);padding:6px 6px 10px;display:flex;flex-direction:column;gap:6px}
+.desp .fp{border:0}
+.vacio-ag{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 16px;display:flex;align-items:center;gap:12px}
+.vacio-ag svg{width:34px;height:34px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;flex:none}
+.camino{display:flex;gap:2px;overflow-x:auto;padding-bottom:2px}
+.camino button{flex:1 0 64px;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0;min-height:60px;color:var(--muted);font-size:.72rem;line-height:1.2;text-align:center}
+.camino i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box;display:block;background:var(--surface)}
+.camino .hecha i{background:var(--morado);border-color:var(--morado)}
+.camino .actual i{border-color:var(--morado);box-shadow:0 0 0 3px var(--morado-suave)}
+.camino .actual{color:var(--morado);font-weight:700}.camino .hecha{color:var(--ink)}
+.accion{background:var(--morado-suave);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.accion .preg{font-family:var(--display);font-size:1.15rem;font-weight:600;line-height:1.3}
+.embudo{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.embudo button{flex:1 0 74px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 4px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink)}
+.embudo button b{font-family:var(--display);font-size:1.3rem}
+.embudo button span{font-size:.7rem;line-height:1.15;text-align:center}
+.embudo button[aria-pressed=true]{background:var(--morado);border-color:var(--morado);color:var(--sobre-morado)}
+.tarj{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 6px 20px rgba(75,22,142,.08)}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.trio button{min-height:64px;border-radius:16px;font-weight:600;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.trio .si{background:var(--morado);border-color:var(--morado);color:var(--sobre-morado)}
+.trio .no{color:#A3341A;border-color:#E8C9C0}
+.info-canales{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:.92rem;line-height:1.5}
+.info-canales ol{margin:6px 0;padding-left:20px}
 .hoja{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .hoja .barra{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:1}
 .hoja .barra button{background:none;border:0;color:var(--morado);font-weight:600;padding:8px 4px}
@@ -231,7 +271,7 @@ var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capaci
 
 function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:''}}
 var S={meta:{perfil:perfilVacio(),plan:null,hechas:{},metaDiaria:5},
-       pros:{},tab:'hoy',filtro:'todos'};
+       pros:{},tab:'hoy',filtro:'listo'};
 var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
 
 /* ---------- Conexión (se guarda solo en este dispositivo) ---------- */
@@ -381,11 +421,17 @@ async function recuperarUltima(){
 }
 function regActual(){var id=BUS.reg;return registro().filter(function(b){return b.id===id})[0]||null}
 function canalesAuto(){return ['instagram','linkedin','google']}
+var MODOS_IG=[['todo','En todo','Nombre, bio y publicaciones. Trae más variedad.'],['nombre','Nombre del perfil','Quienes ponen la palabra en su nombre, ej: "Ana | Coach de vida".'],
+  ['bio','Bio','Quienes escriben esas palabras en su bio.'],['publicaciones','Reels y carruseles','Quienes hablan de eso en sus publicaciones.'],
+  ['hashtag','Hashtag','Publicaciones recientes con ese hashtag. Escribe un hashtag por línea, sin # ni espacios (ej: coachdevida).']];
+function modoIG(){return BUS.modo||'todo'}
+function esHashtag(canal){return canal==='instagram'&&modoIG()==='hashtag'}
+function aHashtag(t){return norm(t).replace(/[^a-z0-9_]/g,'')}
 /* Búsquedas que realmente se envían: nunca de una sola palabra (traen marcas y cuentas al azar) */
-function busquedasListas(canal){var L=lugares(),T=textosPara(canal);
+function busquedasListas(canal){var L=lugares(),T=textosPara(canal);if(esHashtag(canal))return T.map(aHashtag).filter(Boolean);
   return T.map(function(t,i){var w=String(t).trim().split(/\s+/).filter(Boolean);
     if(w.length<2&&L.length&&!L.some(function(x){return norm(t).indexOf(norm(x))>-1}))return (t+' '+L[i%L.length]).trim();return String(t).trim()})}
-function busquedasMalas(canal){return busquedasListas(canal).filter(function(t){return t.split(/\s+/).filter(Boolean).length<2})}
+function busquedasMalas(canal){if(esHashtag(canal))return [];return busquedasListas(canal).filter(function(t){return t.split(/\s+/).filter(Boolean).length<2})}
 function textosPara(canal){
   var fl=lineas(filtrosDe(canal).busquedas);if(fl.length)return fl.slice(0,5);
   var pl=S.meta.plan,p=S.meta.perfil;
@@ -476,8 +522,8 @@ function vValidacion(canal){
 /* ---------- Búsqueda gratis (el usuario busca en Google) ---------- */
 function sugerenciasGratis(){
   var c=canalActual(),out=[],p=S.meta.perfil;
-  lineas(filtrosDe(c).busquedas).forEach(function(t){out.push(t)});
-  (S.meta.plan&&S.meta.plan.busquedas||[]).forEach(function(b){out.push(b.texto)});
+  lineas(filtrosDe(c).busquedas).forEach(function(t){out.push(String(t).replace(/^#/,''))});
+  (S.meta.plan&&S.meta.plan.busquedas||[]).forEach(function(b){if(b.canal!=='whatsapp')out.push(b.texto)});
   palabrasCliente().forEach(function(w,i){var L=lugares();out.push((w+' '+(L.length?L[i%L.length]:'')).trim())});
   return out.map(function(t){return String(t||'').trim()}).filter(function(t,i,a){return t&&a.map(norm).indexOf(norm(t))===i}).slice(0,8);
 }
@@ -489,15 +535,64 @@ function urlGratis(){
   return 'https://www.google.com/search?q='+encodeURIComponent(pre+q+ex);
 }
 function vGratis(){
-  var donde=BUS.gratisDonde||canalActual(),sug=sugerenciasGratis(),u=urlGratis();
-  return '<section class="sec"><h3>Búsqueda sin costo</h3><p class="nota">Escribe qué buscar o toca una sugerencia. Se abre Google en tu celular; tú eliges a quién agregar.</p><div class="panel">'+
-   (sug.length?'<span class="nota">Sugerencias</span><div class="fila">'+sug.map(function(t){return '<button class="btn suave" style="flex:0 1 auto;min-height:34px;padding:6px 12px;font-size:.85rem;font-weight:500;border-radius:999px" data-act="gratis-sug" data-v="'+esc(t)+'">'+esc(t)+'</button>'}).join('')+'</div>':'')+
+  var donde=BUS.gratisDonde||canalActual(),sug=sugerenciasGratis(),u=urlGratis(),G=BUS.gr||null;
+  var h='<section class="sec"><p class="nota">Sin costo. Buscas en Google, copias los resultados y la app los ordena, separa a cada persona y le pone puntaje según tu perfil <b>'+esc(perfilAct().nombre)+'</b>.</p><div class="panel" style="display:flex;flex-direction:column;gap:12px">'+
+   '<b style="font-size:.9rem">1. Busca en Google</b>'+
+   (sug.length?'<div class="opcs">'+sug.map(function(t){return '<button type="button" class="opc" data-act="gratis-sug" data-v="'+esc(t)+'">'+esc(t)+'</button>'}).join('')+'</div>':'')+
    '<label class="campo" for="gratis-q">Qué buscar<input type="text" id="gratis-q" data-gratis="1" value="'+esc(BUS.gratis||'')+'" placeholder="Por ejemplo: coach de vida México"></label>'+
-   '<div class="filtros" style="flex-wrap:wrap;overflow:visible" role="group" aria-label="Dónde buscar">'+[['instagram','Perfiles de Instagram'],['linkedin','Perfiles de LinkedIn'],['google','Toda la web']].map(function(o){return '<button data-act="gratis-donde" data-v="'+o[0]+'" aria-pressed="'+(donde===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
-   '<p class="costo">Se excluyen automáticamente las palabras de tu lista "Excluir".</p>'+
+   '<div class="opcs" role="group" aria-label="Dónde buscar">'+[['instagram','Instagram'],['linkedin','LinkedIn'],['google','Toda la web']].map(function(o){return '<button type="button" class="opc" data-act="gratis-donde" data-v="'+o[0]+'" aria-pressed="'+(donde===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
    '<div><a class="btn" id="gratis-ir" style="display:inline-flex;align-items:center;text-decoration:none'+(u?'':';opacity:.55;pointer-events:none')+'" href="'+esc(u||'#')+'" target="_blank" rel="noopener">Buscar en Google</a></div>'+
-   '</div></section>';
+   '<b style="font-size:.9rem">2. Copia y pega los resultados aquí</b>'+
+   '<p class="nota" style="margin:0">En la página de Google: mantén el dedo sobre el texto → <b>Seleccionar todo</b> → <b>Copiar</b>. Puedes pegar varias páginas, una tras otra.</p>'+
+   '<label class="campo" for="gr-txt"><span hidden>Resultados</span><textarea id="gr-txt" data-grtxt="1" style="min-height:120px" placeholder="Pega aquí lo que copiaste de Google">'+esc(BUS.grTxt||'')+'</textarea></label>'+
+   '<div><button class="btn" data-act="gr-ordenar">Ordenar y puntuar</button></div></div></section>';
+  if(G){
+    h+='<section class="sec"><h3>'+G.length+' personas encontradas</h3>'+(G.length?'<p class="nota">Ordenadas por puntaje según tu perfil. Revisa su perfil antes de agregarlas.</p>':'<p class="nota">No encontré perfiles en el texto pegado. Asegúrate de copiar la página de resultados de Google.</p>')+
+      '<div class="lista">'+G.map(function(r,i){var c=r.pts>=70?'cal':r.pts>=45?'tib':'fri';
+        var acc=r.hecho?'<span class="chip">'+esc(r.hecho)+'</span>':'<div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="gr-add" data-v="'+i+'">Agregar</button><button class="btn sec2" data-act="gr-despues" data-v="'+i+'">Revisar después</button><button class="btn sec2" data-act="gr-no" data-v="'+i+'">No calza</button></div>';
+        return '<div class="panel res"><b>'+esc(r.nombre)+' <span class="pt '+c+'">'+r.pts+' pts</span></b><div class="acc">'+acc+'</div>'+
+          '<span class="sub">'+(r.usuario?'@'+esc(r.usuario)+' · ':'')+CANALES[r.canal]+'</span><span class="sub">'+esc(r.texto.slice(0,220))+'</span>'+
+          (r.razones.length?'<span class="sub" style="color:var(--dorado);font-weight:600">'+esc(r.razones.join(' · '))+'</span>':'')+
+          '<div class="links" style="grid-column:1 / -1"><a href="'+esc(r.perfil)+'" target="_blank" rel="noopener">Ver perfil</a></div></div>'}).join('')+'</div></section>';
+  }
+  return h;
 }
+/* ---------- Búsqueda gratis: separa personas del texto de Google y les pone puntaje ---------- */
+function parsearGoogle(txt){
+  var L=String(txt||'').split(/\n/).map(function(x){return x.trim()}).filter(Boolean),marcas=[];
+  var NO=/^(p|reel|reels|explore|stories|tv|accounts|about|directory|legal|web|tags|locations|popular|search|in|company|posts|pulse|jobs|school)$/i;
+  L.forEach(function(l,i){var m;
+    var re=/instagram\.com\s*(?:›|\/)\s*([A-Za-z0-9._]{2,30})/gi;while((m=re.exec(l)))marcas.push({i:i,canal:'instagram',u:m[1],nombre:nombreCerca(L,i,m[1])});
+    var re2=/\(@([A-Za-z0-9._]{2,30})\)/g;while((m=re2.exec(l)))marcas.push({i:i,canal:'instagram',u:m[1],nombre:l.split('(@')[0].trim()});
+    var re3=/linkedin\.com\s*(?:›|\/)\s*in\s*(?:›|\/)\s*([A-Za-z0-9-]{3,100})/gi;while((m=re3.exec(l)))marcas.push({i:i,canal:'linkedin',u:m[1],nombre:nombreCerca(L,i,'')})});
+  marcas=marcas.filter(function(x){return !NO.test(x.u)});
+  var out=[],vistos={};
+  marcas.forEach(function(mk,n){var k=mk.canal+':'+mk.u.toLowerCase();if(vistos[k])return;vistos[k]=1;
+    var fin=L.length;for(var q=n+1;q<marcas.length;q++){if((marcas[q].canal+':'+marcas[q].u.toLowerCase())!==k){fin=marcas[q].i;break}}
+    var ctx=L.slice(mk.i,Math.max(mk.i+1,fin)).join(' ');
+    var nom=marcas.filter(function(x){return (x.canal+':'+x.u.toLowerCase())===k&&x.nombre&&x.nombre!==x.u})[0];
+    out.push({canal:mk.canal,usuario:mk.canal==='instagram'?mk.u:'',nombre:String((nom&&nom.nombre)||mk.u).replace(/\s*[•|]\s*Instagram.*$/i,'').replace(/\s*\|\s*LinkedIn.*$/i,'').slice(0,80),
+      perfil:mk.canal==='instagram'?'https://www.instagram.com/'+mk.u+'/':'https://www.linkedin.com/in/'+mk.u+'/',texto:ctx.replace(/https?:\/\/\S+/g,'').slice(0,400)})});
+  return out}
+function nombreCerca(L,i,u){for(var k=i;k>=Math.max(0,i-2);k--){var t=L[k];if(/\(@/.test(t))return t.split('(@')[0].trim();if(/ - .*\|?\s*LinkedIn/i.test(t)||/ \| LinkedIn/i.test(t))return t.split(/ \| LinkedIn/i)[0].trim()}
+  for(var j=i+1;j<=Math.min(L.length-1,i+2);j++){var t2=L[j];if(/\(@/.test(t2))return t2.split('(@')[0].trim();if(/LinkedIn/i.test(t2)&&t2.length<140)return t2.split(/ \| LinkedIn/i)[0].trim()}
+  return u}
+var ORG_RE=/escuela|academia|instituto|universidad|fundaci[oó]n|asociaci[oó]n|federaci[oó]n|comisi[oó]n|\bong\b|sin fines de lucro|somos una|cl[ií]nica|centro de|agencia|tienda|revista/i;
+function puntuar(r){var t=norm(r.nombre+' '+r.usuario+' '+r.texto),pts=35,raz=[];
+  var pal=palabrasCliente().concat(tiposSel().map(function(x){return x[2][0]})).filter(function(w){return t.indexOf(norm(w))>-1});
+  if(pal.length){pts+=25;raz.push('se presenta como '+pal[0])}
+  var si=senalesSi().filter(function(w){return t.indexOf(norm(w))>-1});if(si.length){pts+=Math.min(30,si.length*15);raz.push('dice: '+si.slice(0,3).join(', '))}
+  var lg=lugares().filter(function(w){return t.indexOf(norm(w))>-1});if(lg.length){pts+=10;raz.push('en '+lg[0])}
+  var ex=exclusionesFicha().concat(comas(filtrosDe(r.canal==='linkedin'?'linkedin':'instagram').excluir)).filter(function(w){return w&&t.indexOf(norm(w))>-1});
+  if(ex.length){pts-=40;raz.push('ojo: menciona '+ex[0])}
+  if(ORG_RE.test(r.nombre+' '+r.texto)){pts-=30;raz.push('parece organización')}
+  r.pts=Math.max(0,Math.min(100,pts));r.razones=raz;return r}
+function ordenarGratis(){var G=parsearGoogle(BUS.grTxt).map(puntuar).sort(function(a,b){return b.pts-a.pts});
+  G.forEach(function(r){if(yaEsta(r))r.hecho='Ya está en tu lista'});BUS.gr=G;render();toast(G.length?G.length+' personas separadas y puntuadas.':'No encontré perfiles en el texto.')}
+function agregarGratis(i,despues){var r=(BUS.gr||[])[i];if(!r||r.hecho)return;
+  var n=Math.round(r.pts/20);var np=normal({id:nuevoId(),nombre:r.nombre,canal:r.canal,link:r.perfil,perfil:r.perfil,notas:(r.usuario?'@'+r.usuario+'\n':'')+r.texto,
+    origen:'gratis',estado:despues?'revisar':'listo',calificado:!despues,n:n,a:n,c:n,motivo:'Puntaje automático: '+r.razones.join(' · '),perfilId:S.meta.perfilActivo||''});
+  anota(np,'Agregado desde búsqueda gratis');S.pros[np.id]=np;Store.pro(np);r.hecho=despues?'Por revisar':'En tu lista';render()}
 function vDescartados(){var r=BUS.resumen;if(!r||!r.descartados||!r.descartados.length)return '';
   var D=r.descartados.filter(function(x){return typeof x==='string'}),gratis=D.filter(function(x){return /sin costo/.test(x)}).length,leidos=D.length-gratis;
   return '<p class="nota">Se revisaron '+(r.encontrados||'')+' perfiles y se descartaron '+r.descartados.length+'.'+(r.reglas&&r.reglas.porRegla?' '+r.reglas.porRegla+' los frenaron las reglas de la app.':'')+'</p>'+
@@ -514,7 +609,7 @@ async function buscarAuto(){
   BUS.canal=canal;BUS.paso='';BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
   try{
     var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:await cabeceras(),
-      body:JSON.stringify({textos:textos,canal:canal,cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
+      body:JSON.stringify({textos:textos,canal:canal,modo:canal==='instagram'?modoIG():'',cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
         filtro:canal==='instagram'?filtroSeg(filtrosDe(canal)):null})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
@@ -538,22 +633,27 @@ function agregarResultado(i,despues){
 function canalActual(){if(!BUS.canal)BUS.canal=((S.meta.plan&&S.meta.plan.canales.map(function(c){return c.canal}).filter(function(c){return canalesAuto().indexOf(c)>-1})[0])||(esB2B()?'linkedin':'instagram'));return BUS.canal}
 function vFiltros(){
   var c=canalActual(),f=filtrosDe(c);
-  return '<details'+(BUS.verFiltros?' open':'')+' style="display:flex;flex-direction:column;gap:10px" id="det-fil"><summary style="cursor:pointer;font-weight:600;color:var(--morado);padding:6px 0">Tus filtros para '+CANALES[c]+'</summary>'+
-   '<label class="campo" for="fil-bus">Buscar<small>Una búsqueda por línea. Cargo o forma en que tu cliente se presenta, más el lugar.</small><textarea id="fil-bus" data-fil="busquedas">'+esc(f.busquedas)+'</textarea></label>'+
+  return '<details'+(BUS.verFiltros?' open':'')+' style="display:flex;flex-direction:column;gap:10px" id="det-fil"><summary style="cursor:pointer;font-weight:600;color:var(--morado);padding:6px 0">Más filtros (excluir'+(c==='instagram'&&usaSeguidores()?', seguidores':'')+')</summary>'+
    '<label class="campo" for="fil-ex">Excluir<small>Palabras que NO quieres que aparezcan, separadas por coma (por ejemplo, quienes venden lo mismo que tú).</small><input type="text" id="fil-ex" data-fil="excluir" value="'+esc(f.excluir)+'"></label>'+
    (c==='instagram'&&!usaSeguidores()?'<p class="nota">Para tu tipo de cliente los seguidores no importan, así que la app no los filtra.</p>':'')+(c==='instagram'&&usaSeguidores()?'<div class="fila"><label class="campo" for="fil-min" style="flex:1 1 120px">Mínimo de seguidores<input type="number" inputmode="numeric" id="fil-min" data-fil="min" value="'+esc(f.min)+'"></label><label class="campo" for="fil-max" style="flex:1 1 120px">Máximo de seguidores<input type="number" inputmode="numeric" id="fil-max" data-fil="max" value="'+esc(f.max)+'"><small>Vacío = sin límite</small></label></div>':'')+
-   '<div><button class="btn sec2" data-act="fil-proponer">Proponer filtros según mi perfil</button></div></details>';
+   '</details>';
 }
 function vBusqueda(){
-  canalActual();var opc=canalesAuto().map(function(c){return '<option value="'+c+'"'+(BUS.canal===c?' selected':'')+'>'+CANALES[c]+'</option>'}).join('');
-  var h='<section class="sec"><h3>Búsqueda automática</h3><p class="nota">La app busca por ti y te trae perfiles listos para revisar. Usa tu crédito de Apify.</p>'+
-   '<p class="nota">Buscando para el perfil: <b>'+esc(perfilAct().nombre)+'</b>'+(perfilesL().length>1?' (cámbialo arriba)':'')+'</p>'+
-   '<div class="panel">'+
-   '<div class="fila"><label class="campo" for="bus-canal" style="flex:1 1 140px">Dónde<select id="bus-canal" data-bus="canal">'+opc+'</select></label>'+
-   '<label class="campo" for="bus-cant" style="flex:1 1 120px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
+  var c=canalActual(),f=filtrosDe(c),hs=esHashtag(c),modo=MODOS_IG.filter(function(m){return m[0]===modoIG()})[0]||MODOS_IG[0];
+  var h='<section class="sec"><p class="nota">La app busca por ti y te trae perfiles listos para revisar. Usa tu crédito de Apify. Perfil: <b>'+esc(perfilAct().nombre)+'</b></p>'+
+   '<div class="panel" style="display:flex;flex-direction:column;gap:12px">'+
+   '<div><b style="font-size:.9rem">1. ¿Dónde buscar?</b><div class="opcs" style="margin-top:6px">'+canalesAuto().map(function(x){return '<button type="button" class="opc" data-act="bus-canal" data-v="'+x+'" aria-pressed="'+(c===x)+'">'+CANALES[x]+'</button>'}).join('')+'</div></div>'+
+   (c==='instagram'?'<div><b style="font-size:.9rem">2. ¿En qué parte de Instagram busca tus palabras?</b><div class="opcs" style="margin-top:6px">'+MODOS_IG.map(function(m){return '<button type="button" class="opc" data-act="bus-modo" data-v="'+m[0]+'" aria-pressed="'+(m[0]===modo[0])+'">'+m[1]+'</button>'}).join('')+'</div><p class="nota" style="margin-top:6px">'+esc(modo[2])+'</p></div>':'')+
+   '<label class="campo" for="fil-bus"><b style="font-size:.9rem">'+(c==='instagram'?'3':'2')+'. '+(hs?'¿Qué hashtags?':'¿Qué palabras buscar?')+'</b><small>'+(hs?'Un hashtag por línea, sin # ni espacios. Ej: coachdevida, terapeutaholistica.':'Una búsqueda por línea, de 2 a 4 palabras: quién es + lo que ofrece o el lugar. Ej: coach de vida Chile.')+'</small><textarea id="fil-bus" data-fil="busquedas">'+esc(f.busquedas)+'</textarea></label>'+
+   '<div class="fila"><button class="btn sec2" data-act="fil-proponer" style="min-height:38px;padding:8px 12px;font-size:.85rem">Proponer según mi perfil</button>'+
+   '<label class="campo" for="bus-cant" style="flex:0 1 130px;flex-direction:row;align-items:center;gap:8px">Cuántos<select id="bus-cant" data-bus="cantidad">'+[5,10,20].map(function(n){return '<option'+(BUS.cantidad===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label></div>'+
+   '<details class="grp"><summary>¿Cómo funciona esta búsqueda? <span class="cnt">ver</span></summary><ol class="senales">'+
+     (hs?'<li>Apify busca en Instagram las publicaciones recientes con tus hashtags.</li>':'<li>Google busca en '+CANALES[c]+' páginas que tengan <b>todas</b> las palabras de cada línea, en cualquier parte'+(c==='instagram'?' que elegiste arriba':'')+'. Ej: "coach Latinoamérica" trae perfiles o publicaciones donde aparecen "coach" y "Latinoamérica".</li>')+
+     (c==='instagram'?'<li>Para cada persona encontrada, Apify abre su perfil y lee su bio y seguidores (esto es lo que más cuesta).</li>':'')+
+     '<li>La app descarta organizaciones, competencia y lo que pusiste en "Excluir", y te muestra a quienes calzan, con los descartados y su motivo.</li></ol></details>'+
    vFiltros()+'<p class="costo">'+(regActual()&&regActual().costo?'Esta búsqueda costó US$'+regActual().costo.toFixed(3)+'. ':'')+'Costo aproximado: '+(BUS.cantidad<=5?'5 a 10':BUS.cantidad<=10?'10 a 20':'20 a 40')+' centavos de dólar. Tarda entre 2 y 5 minutos.</p>'+
    (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+
-     '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
+     '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+(canalActual()==='instagram'?' · busca en: '+(MODOS_IG.filter(function(m){return m[0]===modoIG()})[0]||MODOS_IG[0])[1].toLowerCase():'')+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+(esHashtag(canalActual())?'#':'')+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
      (busquedasMalas(canalActual()).length?'<p class="error">Una sola palabra trae marcas, gimnasios y cuentas al azar, y igual se cobra. Escribe búsquedas de 2 a 4 palabras (ej: "coach de vida Chile") o agrega tu país en Mi cliente.</p>':'')+'</div>'+
      '<div class="fila">'+(busquedasMalas(canalActual()).length?'':'<button class="btn" data-act="bus-ir">Buscar así</button>')+'<button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
      :'<div class="fila"><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button>'+(BUS.resultados?'':'<button class="btn sec2" data-act="bus-recuperar"'+(BUS.recuperando?' disabled':'')+'>'+(BUS.recuperando?'Recuperando…':'Recuperar última búsqueda')+'</button>')+'</div>')+
@@ -785,6 +885,33 @@ async function mensajeIA(p){
 function mensajeBase(p){var t=p.estado==='contactada'?msjBase('seguimiento'):msjBase(grupoDe(p));return t.replace(/\{nombre\}/g,(String(p.nombre||'').trim().split(/\s+/)[0]||''))}
 
 /* ---------- Vistas ---------- */
+var COLOR_G={cercana:'#B5401F',tibia:'#8A5E0B',nueva:'#6B6478',fria:'#4F6F94',fuera:'#8A8494'};
+function iniciales(n){var w=String(n||'?').replace(/[^\p{L}\p{N} ]/gu,' ').trim().split(/\s+/).filter(Boolean);return ((w[0]||'?')[0]+((w[1]||'')[0]||'')).toUpperCase()}
+var IC_WA='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.5 7.3L3 20.5l1.8-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg>';
+var IC_LINK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+function contacto(p){var txt=p.estado==='contactada'?(p.mensajeSeg||mensajeBase(p)):(p.mensaje||mensajeBase(p)),w=waLink(p,txt);
+  if(w)return '<a class="ib wa" href="'+esc(w)+'" target="_blank" rel="noopener" aria-label="Abrir WhatsApp con el mensaje" style="color:#1F7A4D">'+IC_WA+'</a>';
+  var u=/^https?:\/\//.test(p.perfil||'')?p.perfil:(/^https?:\/\//.test(p.link||'')?p.link:'');
+  return u?'<a class="ib" href="'+esc(u)+'" target="_blank" rel="noopener" aria-label="Abrir su perfil">'+IC_LINK+'</a>':''}
+function filaP(p,sub,acc,menu){
+  return '<div class="fp"><div class="fp-f"><button type="button" class="fp-n" data-act="abrir" data-v="'+esc(p.id)+'"><span class="av" style="background:'+(COLOR_G[grupoDe(p)]||'#6B6478')+'">'+esc(iniciales(p.nombre))+'</span>'+
+    '<span style="min-width:0"><b>'+esc(p.nombre||'Sin nombre')+'</b><small>'+esc(sub)+'</small></span></button>'+contacto(p)+
+    (acc?'<button type="button" class="ba'+(acc.sec?' sec2':'')+'" data-act="'+acc.act+'" data-v="'+esc(p.id)+'"'+(acc.m?' data-m="'+acc.m+'"':'')+'>'+acc.label+'</button>':'')+
+    (menu?'<button type="button" class="ib" data-act="menu-p" data-v="'+esc(p.id)+'" aria-label="Mover de etapa o grupo">⋯</button>':'')+'</div>'+
+    (menu&&S.menuP===p.id?menuMover(p):'')+'</div>'}
+function camino(){return [['listo',nombreFija('listo')],['contactada',nombreFija('contactada')]].concat(medio().map(function(m){return [m.id,m.nombre]}),[['cliente',nombreFija('cliente')]])}
+function menuMover(p){var ops=[['revisar',nombreFija('revisar')]].concat(camino(),[['descanso',nombreFija('descanso')],['descartada','Descartar']]).filter(function(x){return x[0]!==p.estado});
+  return '<div class="fp-menu"><small class="nota">Mover a</small><div class="opcs">'+ops.map(function(o){return '<button type="button" class="opc" data-act="mover-a" data-v="'+esc(p.id)+'" data-m="'+o[0]+'">'+esc(o[1])+'</button>'}).join('')+'</div>'+
+    '<small class="nota">Grupo</small><div class="opcs">'+GRUPOS.map(function(g){return '<button type="button" class="opc" data-act="grupo-a" data-v="'+esc(p.id)+'" data-m="'+g[0]+'" aria-pressed="'+(grupoDe(p)===g[0])+'">'+g[1].replace(/^\S+\s/,'')+'</button>'}).join('')+'</div></div>'}
+function irEtapa(p,id){
+  if(id===p.estado)return;
+  if(id==='listo')return mover(p,'retomar');
+  if(id==='contactada'){p.estado='contactada';p.contactadaEn=p.contactadaEn||hoy();p.ultimoEnvio=p.ultimoEnvio||hoy();p.proximoSeg=enDias(seg().primero);anota(p,'Pasó a: '+nombreEtapa(id));Store.pro(p);return}
+  if(id==='cliente')return mover(p,'cliente');
+  if(id==='descanso')return mover(p,'descanso');
+  if(id==='descartada')return mover(p,'descartar');
+  if(id==='revisar'){p.estado='revisar';p.proximoSeg='';anota(p,'Pasó a: Por revisar');Store.pro(p);return}
+  if(etapaMedio(id)){p.respondioEn=p.respondioEn||hoy();aEtapa(p,id);Store.pro(p)}}
 function vacio(t,d,b,act,val){return '<div class="vacio"><h2>'+t+'</h2><p class="nota">'+d+'</p><div><button class="btn" data-act="'+act+'" data-v="'+val+'">'+b+'</button></div></div>'}
 function tarjeta(p,sub){
   var badge=p.calificado?insignia(p):'<span class="pt sin">'+nombreGrupo(grupoDe(p)).split(' ')[0]+'</span>';
@@ -800,63 +927,70 @@ function vHoy(){
   if(!L.length&&!p.cliente.trim())return vacio('Empieza por tu cliente ideal','Cuéntale a la app a quién ayudas. Con eso decide dónde buscar y qué señales mirar.','Definir mi cliente ideal','tab','perfil');
   if(!L.length)return vacio('Aún no hay prospectos','Importa tu lista (por ejemplo, tus etiquetas de WhatsApp) o busca personas nuevas.','Ir a Mis prospectos','tab','prospectos');
   var A=L.filter(function(x){return grupoDe(x)!=='fuera'}),H=hoy();
-  var env=L.filter(function(x){return x.ultimoEnvio===H}).length,meta=S.meta.metaDiaria||5,cupo=Math.max(meta-env,0);
+  var env=L.filter(function(x){return x.ultimoEnvio===H}).length,meta=S.meta.metaDiaria||5;
   var citas=A.filter(function(x){var em=etapaMedio(x.estado);return em&&em.fecha&&x.citaEn&&x.citaEn>=H&&x.citaEn<=enDias(1)});
   var conv=A.filter(function(x){return etapaMedio(x.estado)&&citas.indexOf(x)===-1&&(!x.proximoSeg||x.proximoSeg<=H)});
   var segs=A.filter(function(x){return x.estado==='contactada'&&x.proximoSeg&&x.proximoSeg<=H});
   var volver=A.filter(function(x){return x.estado==='descanso'&&x.proximoSeg&&x.proximoSeg<=H});
   var porRango=function(a,b){return RANGO[grupoDe(a)]-RANGO[grupoDe(b)]||pts(b)-pts(a)};
-  var listos=A.filter(function(x){return x.estado==='listo'&&grupoDe(x)!=='fria'}).sort(porRango);
-  var porRev=L.filter(function(x){return x.estado==='revisar'});
+  var listos=A.filter(function(x){return (x.estado==='listo'||x.estado==='nuevo')&&grupoDe(x)!=='fria'}).sort(porRango);
+  var porRev=L.filter(function(x){return x.estado==='revisar'}).sort(function(a,b){return pts(b)-pts(a)});
+  var gn=function(x){return nombreGrupo(grupoDe(x)).replace(/^\S+\s/,'')};
+  var bloque=function(t,nota,arr,sub,acc){if(!arr.length)return '';return '<section class="sec"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h3>'+t+'</h3><small class="nota">'+nota+'</small></div><div class="lista">'+arr.map(function(x){return filaP(x,sub(x),acc(x))}).join('')+'</div></section>'};
   var h='<section class="sec"><span class="eyebrow">Hoy te toca</span><h2>'+env+' de '+meta+' mensajes nuevos enviados</h2>'+
-    '<div class="avance" aria-hidden="true"><i style="width:'+Math.min(100,Math.round(env/meta*100))+'%"></i></div>'+
-    (cupo?'':'<p class="nota">Meta de hoy cumplida. Lo que queda puede esperar a mañana. 💜</p>')+'</section>';
-  h+=grupo('Sesiones de hoy y mañana','Prepárate y confirma la hora.',citas,function(x){return nombreEtapa(x.estado)+' · '+x.citaEn});
-  h+=grupo('Conversaciones que esperan tu paso','Aquí hay alguien con ganas de hablar contigo. Esto va primero.',conv,function(x){return nombreEtapa(x.estado)+(x.acuerdo?' · '+x.acuerdo:'')});
-  h+=grupo('Seguimientos de hoy','Les escribiste y aún no responden.',segs,function(x){return (x.seguimientos?x.seguimientos+' seguimiento(s)':'Primer seguimiento')+' · '+nombreGrupo(grupoDe(x))});
-  if(cupo)h+=grupo('Para escribir hoy','Primero las más cercanas.',listos.slice(0,cupo),function(x){return nombreGrupo(grupoDe(x)).replace(/^\S+\s/,'')+((x.etiquetas||[]).length?' · '+x.etiquetas.slice(0,2).join(', '):'')});
-  h+=grupo('Terminó su descanso','Pasó el tiempo de pausa. Puedes volver a saludar, sin presión.',volver.slice(0,5));
-  if(porRev.length)h+='<section class="sec"><h3>Por revisar</h3><p class="nota">'+porRev.length+' perfil(es) guardados de tus búsquedas. Decide si calzan.</p><div><button class="btn suave" data-act="filtro" data-v="revisar">Revisar ahora</button></div></section>';
-  if(!citas.length&&!conv.length&&!segs.length&&!listos.length&&!porRev.length&&!volver.length)h+='<section class="sec"><p class="nota">Nada pendiente para hoy. Si te queda tiempo, importa una lista o busca personas nuevas.</p><div class="fila"><button class="btn sec2" data-act="tab" data-v="prospectos">Mis prospectos</button><button class="btn sec2" data-act="tab" data-v="encontrar">Encontrar</button></div></section>';
+    '<div class="avance" aria-hidden="true"><i style="width:'+Math.min(100,Math.round(env/meta*100))+'%"></i></div>'+(env>=meta?'<p class="nota">Meta de hoy cumplida. Lo que queda puede esperar a mañana. 💜</p>':'')+'</section>';
+  var agenda=citas.length+conv.length+segs.length+volver.length;
+  h+=bloque('Sesiones de hoy y mañana','Confirma la hora',citas,function(x){return nombreEtapa(x.estado)+' · '+x.citaEn},function(){return {act:'abrir',label:'Abrir',sec:true}});
+  h+=bloque('Te respondieron','Va primero',conv,function(x){return nombreEtapa(x.estado)+(x.acuerdo?' · '+x.acuerdo:'')},function(){return {act:'abrir',label:'Abrir',sec:true}});
+  h+=bloque('Seguimientos','No han respondido',segs,function(x){return (x.seguimientos?'Seguimiento '+(x.seguimientos+1):'Primer seguimiento')+' · '+gn(x)},function(){return {act:'hoy-hecho',m:'seguimiento',label:'Hecho'}});
+  h+=bloque('Terminó su descanso','Puedes volver a saludar',volver.slice(0,5),function(x){return gn(x)},function(){return {act:'hoy-hecho',m:'retomar',label:'Retomar',sec:true}});
+  if(!agenda)h+='<div class="vacio-ag"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><div><b style="font-family:var(--display);font-size:1.1rem">Sin actividades agendadas</b><p class="nota">No tienes seguimientos ni sesiones para hoy.</p></div></div>';
+  var ab=S.hoyAb||'';
+  var desp=function(id,t,arr,sub,acc,extra){return '<details class="desp" data-hoyab="'+id+'"'+(ab===id?' open':'')+'><summary>'+t+'<span class="cnt2">'+arr.length+'</span></summary><div class="cuerpo">'+(extra||'')+
+    (arr.length?arr.slice(0,40).map(function(x){return filaP(x,sub(x),acc)}).join('')+(arr.length>40?'<p class="nota" style="padding:4px 8px">Y '+(arr.length-40)+' más en Mis prospectos.</p>':''):'<p class="nota" style="padding:8px">Nadie por ahora.</p>')+'</div></details>'};
+  h+='<section class="sec"><h3>'+(agenda?'Además, puedes contactar a tu lista actual:':'Puedes contactar a tu lista actual:')+'</h3>'+
+    desp('c',nombreFija('listo'),listos,function(x){return gn(x)+((x.etiquetas||[]).length?' · '+x.etiquetas[0]:'')},{act:'hoy-hecho',m:'enviada',label:'Le escribí'})+
+    desp('r',nombreFija('revisar'),porRev,function(x){return (x.calificado?pts(x)+' pts · ':'')+CANALES[x.canal]},{act:'revisar-ir',label:'Revisar',sec:true},porRev.length?'<div style="padding:6px"><button class="btn" data-act="revisar-ir" style="width:100%">Revisar con tarjetas, una a una</button></div>':'')+
+    '</section>';
   return h;
 }
 function vEncontrar(){
   var pl=S.meta.plan;
   if(!pl)return (perfilesL().length>1?'<section class="sec"><b>Buscando para:</b>'+selectorPerfiles(false)+'</section>':'')+vacio('Primero, tu cliente ideal','La app necesita saber a quién buscas para decidir dónde buscar.','Definir mi cliente ideal','tab','perfil');
-  var h=(perfilesL().length>1?'<section class="sec"><b>Buscando para:</b>'+selectorPerfiles(false)+'</section>':'')+'<section class="sec"><span class="eyebrow">Encontrar</span><h2>Dónde está tu cliente</h2><p class="nota">'+esc(pl.resumen)+'</p>'+
-    '<div><button class="btn" data-act="nuevo">Agregar prospecto</button></div></section>';
-  h+='<section class="sec"><h3>Canales, del mejor al peor</h3><div class="lista">'+pl.canales.map(function(c,i){
-    return '<div class="panel canal"><span class="n">'+(i+1)+'</span><b>'+CANALES[c.canal]+'</b><span class="nota">'+esc(c.porque)+'</span></div>'}).join('')+'</div></section>';
-  h+=vBusqueda();
-  h+=vGratis();
-  h+='<section class="sec"><h3>Señales para reconocer a un buen prospecto</h3>'+DIMS.map(function(d){
-    return '<div class="panel"><b>'+d[2]+'</b><ul class="senales">'+pl.senales[d[1]].map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ul></div>'}).join('')+'</section>';
+  var h=(perfilesL().length>1?'<section class="sec"><b>Buscando para:</b>'+selectorPerfiles(false)+'</section>':'')+'<section class="sec"><span class="eyebrow">Encontrar</span><h2>Buscar prospectos</h2>'+
+    '<div><button class="btn sec2" data-act="nuevo" style="min-height:38px;padding:8px 12px;font-size:.85rem">+ Agregar uno a mano</button></div></section>';
+  h+='<div class="info-canales">Según nuestra experiencia, tus mejores oportunidades para encontrar clientes calificados son:<ol>'+pl.canales.map(function(c){return '<li><b>'+CANALES[c.canal]+'</b>: '+esc(c.porque)+'</li>'}).join('')+'</ol>Tenlo en cuenta al momento de buscar desde esta app.</div>';
+  var vis=BUS.vista||'pagada';
+  h+='<div role="tablist" aria-label="Tipo de búsqueda" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button type="button" class="opc" role="tab" data-act="bus-vista" data-v="pagada" aria-pressed="'+(vis==='pagada')+'" style="border-radius:12px">💳 Automática<br><small style="opacity:.8">con costo</small></button><button type="button" class="opc" role="tab" data-act="bus-vista" data-v="gratis" aria-pressed="'+(vis==='gratis')+'" style="border-radius:12px">🆓 Gratis<br><small style="opacity:.8">tú buscas, la app ordena</small></button></div>';
+  h+=vis==='gratis'?vGratis():vBusqueda();
+  h+='<details class="sec grp"><summary>Cómo reconocer a un buen prospecto <span class="cnt">ver</span></summary>'+DIMS.map(function(d){
+    return '<div class="panel"><b>'+d[2]+'</b><ul class="senales">'+pl.senales[d[1]].map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ul></div>'}).join('')+'</details>';
   return h;
 }
 function filtrados(){var L=lista(),f=S.filtro||'todos',g=S.fg||'todos',pp=S.fp||'todos',q=norm(S.q||'').trim();
-  return L.filter(function(x){return (f==='todos'||x.estado===f)&&(g==='todos'||grupoDe(x)===g)&&(pp==='todos'||(x.perfilId||perfilesL()[0].id)===pp)&&(!q||norm(x.nombre+' '+(x.telefono||'')+' '+(x.etiquetas||[]).join(' ')).indexOf(q)>-1)})}
+  return L.filter(function(x){return (f==='todos'||x.estado===f||(f==='listo'&&x.estado==='nuevo'))&&(g==='todos'||grupoDe(x)===g)&&(pp==='todos'||(x.perfilId||perfilesL()[0].id)===pp)&&(!q||norm(x.nombre+' '+(x.telefono||'')+' '+(x.etiquetas||[]).join(' ')).indexOf(q)>-1)})}
 function listaPros(){
   var V=filtrados(),f=S.filtro||'todos',orden=function(a,b){return RANGO[grupoDe(a)]-RANGO[grupoDe(b)]||pts(b)-pts(a)||(a.creado<b.creado?1:-1)};
-  if(!V.length)return '<p class="nota">No hay prospectos con estos filtros.</p>';
-  var tope=40,mas=function(n){return n>tope?'<p class="nota">Y '+(n-tope)+' más. Usa el buscador o los filtros para encontrarlas.</p>':''};
-  if(f!=='todos'){V.sort(orden);return '<div class="lista">'+V.slice(0,tope).map(function(p){return tarjeta(p)}).join('')+'</div>'+mas(V.length)}
-  return etapas().map(function(e){var arr=V.filter(function(x){return x.estado===e[0]}).sort(orden);if(!arr.length)return '';
-    var abierto=e[0]!=='descartada'&&e[0]!=='descanso'&&arr.length<=60;
-    return '<details class="grp"'+(abierto?' open':'')+'><summary>'+esc(e[1])+' <span class="cnt">'+arr.length+'</span></summary><div class="lista">'+arr.slice(0,tope).map(function(p){return tarjeta(p)}).join('')+'</div>'+mas(arr.length)+'</details>'}).join('');
-}
+  if(!V.length)return '<p class="nota">Nadie en esta etapa por ahora.</p>';
+  var tope=40,sub=function(p){return (f==='todos'?nombreEtapa(p.estado)+' · ':'')+nombreGrupo(grupoDe(p)).replace(/^\S+\s/,'')+(p.calificado?' · '+pts(p)+' pts':'')+((p.etiquetas||[]).length?' · '+p.etiquetas[0]:'')};
+  V.sort(orden);
+  return '<h3>'+(f==='todos'?'Todas':esc(nombreEtapa(f)))+' ('+V.length+')</h3><div class="lista">'+V.slice(0,tope).map(function(p){return filaP(p,sub(p),null,true)}).join('')+'</div>'+
+    (V.length>tope?'<p class="nota">Y '+(V.length-tope)+' más. Usa el buscador para encontrarlas.</p>':'')}
 function vProspectos(){
   var L=lista(),f=S.filtro||'todos',g=S.fg||'todos';
   var h='<section class="sec"><span class="eyebrow">Mis prospectos</span><h2>'+L.length+' en tu lista</h2>'+
     '<div class="fila"><button class="btn" data-act="nuevo">Agregar</button><button class="btn sec2" data-act="importar">Importar lista</button><button class="btn sec2" data-act="proceso">⚙ Mi proceso de venta</button></div></section>';
   if(!L.length)return h+'<p class="nota">Agrega personas una por una, importa una lista (por ejemplo tus etiquetas de WhatsApp) o búscalas en Encontrar.</p>';
+  var cnt=function(id){return L.filter(function(x){return x.estado===id||(id==='listo'&&x.estado==='nuevo')}).length};
+  h+='<section class="sec"><small class="nota">Tu camino de venta · toca una etapa para ver a esas personas</small><div class="embudo">'+[['revisar',nombreFija('revisar')]].concat(camino()).map(function(e){
+    return '<button type="button" data-act="filtro" data-v="'+e[0]+'" aria-pressed="'+(f===e[0])+'"><b>'+cnt(e[0])+'</b><span>'+esc(e[1])+'</span></button>'}).join('')+'</div>'+
+    '<div class="opcs">'+[['descanso',nombreFija('descanso')],['descartada','Descartados'],['todos','Ver todas']].map(function(e){return '<button type="button" class="opc" data-act="filtro" data-v="'+e[0]+'" aria-pressed="'+(f===e[0])+'">'+esc(e[1])+(e[0]==='todos'?'':' '+cnt(e[0]))+'</button>'}).join('')+'</div></section>';
   h+='<label class="campo" for="buscar-pro"><span hidden>Buscar</span><input type="text" id="buscar-pro" data-q="1" placeholder="Buscar por nombre, teléfono o etiqueta" value="'+esc(S.q||'')+'"></label>';
   if(perfilesL().length>1)h+='<div class="filtros" aria-label="Perfil">'+[['todos','Todos los perfiles']].concat(perfilesL().map(function(x){return [x.id,x.nombre]})).map(function(x){
     var n=x[0]==='todos'?L.length:L.filter(function(y){return (y.perfilId||perfilesL()[0].id)===x[0]}).length;return '<button data-act="fperfil" data-v="'+x[0]+'" aria-pressed="'+((S.fp||'todos')===x[0])+'">'+esc(x[1])+' '+n+'</button>'}).join('')+'</div>';
   h+='<div class="filtros" aria-label="Grupo">'+[['todos','Todos los grupos']].concat(GRUPOS).map(function(x){var n=x[0]==='todos'?L.length:L.filter(function(y){return grupoDe(y)===x[0]}).length;
     return n||x[0]==='todos'?'<button data-act="fgrupo" data-v="'+x[0]+'" aria-pressed="'+(g===x[0])+'">'+x[1]+' '+n+'</button>':''}).join('')+'</div>';
-  h+='<div class="filtros" aria-label="Etapa">'+[['todos','Todas las etapas']].concat(etapas()).map(function(e){
-    var n=e[0]==='todos'?L.length:L.filter(function(x){return x.estado===e[0]}).length;
-    return n||e[0]==='todos'||f===e[0]?'<button data-act="filtro" data-v="'+e[0]+'" aria-pressed="'+(f===e[0])+'">'+esc(e[1])+' '+n+'</button>':''}).join('')+'</div>';
+
   return h+'<div id="lista-pros" class="sec">'+listaPros()+'</div>';
 }
 function vCostos(){
@@ -970,6 +1104,7 @@ function pintaHoja(){
   el.hidden=false;
   if(hoja.tipo==='importar'){el.innerHTML=hojaImportar();return}
   if(hoja.tipo==='cuenta'){el.innerHTML=hojaCuenta();return}
+  if(hoja.tipo==='revisar'){el.innerHTML=hojaRevisar();return}
   if(hoja.tipo==='proceso'){el.innerHTML=hojaProceso();return}
   if(hoja.tipo==='nuevo'){var d=hoja.d;
     el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button></div><div class="wrap">'+
@@ -995,36 +1130,57 @@ function pintaHoja(){
     e==='descanso'?'<p class="nota">Descansando hasta el '+esc(p.proximoSeg||'—')+'. Ese día aparece en "Hoy te toca".</p>':'';
   var esSeg=e==='contactada',msjCampo=esSeg?'mensajeSeg':'mensaje',msjTxt=(esSeg?p.mensajeSeg:p.mensaje)||mensajeBase(p),wa=waLink(p,msjTxt);
   var histo=(p.historial||[]).slice(0,8);
+  var C=camino(),ic=C.map(function(x){return x[0]}).indexOf(e==='nuevo'?'listo':e);
+  var preg=e==='revisar'?'¿Calza con tu cliente ideal?':(e==='listo'||e==='nuevo')?'¿Ya le escribiste?':e==='contactada'?'Le escribiste'+(p.contactadaEn?' el '+p.contactadaEn:'')+'. ¿Respondió?':
+    em?'Está en: '+em.nombre+'. ¿Qué pasó?':e==='cliente'?'¡Es tu cliente! Cuando sea buen momento, pídele una referida.':e==='descanso'?'En pausa hasta el '+(p.proximoSeg||'—')+'.':'Está descartada.';
+  var fuera=ic<0?'<p class="nota">Ahora está en: <b>'+esc(nombreEtapa(e))+'</b>. Toca una etapa para moverla.</p>':'';
   el.innerHTML='<div class="barra"><button data-act="cerrar">‹ Volver</button>'+(p.calificado?insignia(p):'<span class="pt sin">'+nombreGrupo(grupoDe(p))+'</span>')+'</div><div class="wrap">'+
-   '<section class="sec"><h2>'+esc(p.nombre||'Sin nombre')+'</h2><div class="fila" style="align-items:center"><span class="chip">'+esc(nombreEtapa(e))+'</span><span class="chip">'+CANALES[p.canal]+'</span>'+(p.origen==='radar'?'<span class="chip">Vino del radar</span>':'')+'</div>'+
-     ((p.etiquetas||[]).length?'<div>'+p.etiquetas.map(function(t){return '<span class="etq">'+esc(t)+'</span>'}).join('')+'</div>':'')+
-     '<div class="opcs" role="group" aria-label="Grupo">'+GRUPOS.map(function(g){return '<button type="button" class="opc" data-act="pgrupo" data-v="'+g[0]+'" aria-pressed="'+(grupoDe(p)===g[0])+'">'+g[1]+'</button>'}).join('')+'</div>'+
-     '</section>'+
-
-   '<section class="sec"><h3>'+(esSeg?'Mensaje de seguimiento':'Mensaje')+'</h3><p class="nota">Edítalo a tu manera. Tú lo envías; la app nunca envía sola.</p>'+
-     '<label class="campo" for="fp-mensaje"><span hidden>Mensaje</span><textarea id="fp-mensaje" data-pf="'+msjCampo+'" style="min-height:120px">'+esc(msjTxt)+'</textarea></label>'+
-     '<div class="fila">'+(wa?'<a class="btn wa" id="fp-wa" href="'+esc(wa)+'" target="_blank" rel="noopener">Abrir WhatsApp con este mensaje</a>':'')+'<button class="btn '+(wa?'sec2':'')+'" data-act="copiar">Copiar mensaje</button>'+(IA?'<button class="btn sec2" data-act="ia-msj"'+(ocupada?' disabled':'')+'>'+(ocupada==='msj'?'Pensando…':'Escribir con IA')+'</button>':'')+'</div>'+(wa||p.canal!=='whatsapp'?'':'<p class="nota">Agrega su WhatsApp en "Sus datos" para abrir el chat directo.</p>')+'</section>'+
-   '<section class="sec"><h3>¿Qué pasó?</h3>'+avisoSeg+(acciones?'<div class="fila">'+acciones+'</div>':'')+
-     (em&&em.fecha?'<label class="campo" for="fp-cita">Fecha de '+esc(em.nombre.toLowerCase())+'<small>La app te avisa el día antes.</small><input type="date" id="fp-cita" data-pf="citaEn" value="'+esc(p.citaEn)+'"></label>':'')+
-     '<label class="campo" for="fp-prox">Próximo contacto<small>Cámbiala si quedaron en otra fecha.</small><input type="date" id="fp-prox" data-pf="proximoSeg" value="'+esc(p.proximoSeg)+'"></label>'+
-     '<label class="campo" for="fp-estado">Cambiar etapa a mano<select id="fp-estado" data-pf="estado">'+etapas().map(function(x){return '<option value="'+x[0]+'"'+(e===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'}).join('')+'</select></label>'+
-     (histo.length?'<div><b style="font-size:.9rem">Historial</b><ul class="histo">'+histo.map(function(x){return '<li>'+esc(x.f)+' · '+esc(x.t)+'</li>'}).join('')+'</ul></div>':'')+
-     '<div class="fila">'+(e!=='descartada'&&e!=='cliente'?'<button class="btn peligro" data-act="etapa" data-v="descartar">Descartar</button>':'')+
-     '<button class="btn peligro" data-act="borrar">'+(borrarListo?'Toca otra vez para borrar':'Borrar prospecto')+'</button></div></section>'+
-   '<section class="sec"><h3>Sus datos</h3>'+
+   '<section class="sec" style="flex-direction:row;align-items:center;gap:12px"><span class="av" style="width:52px;height:52px;font-size:1.05rem;background:'+(COLOR_G[grupoDe(p)]||'#6B6478')+'">'+esc(iniciales(p.nombre))+'</span>'+
+     '<div style="min-width:0"><h2>'+esc(p.nombre||'Sin nombre')+'</h2><p class="nota">'+CANALES[p.canal]+((p.etiquetas||[]).length?' · '+esc(p.etiquetas.join(', ')):'')+(p.origen==='radar'?' · vino del radar':'')+'</p></div></section>'+
+   '<section class="sec panel" style="gap:8px"><small class="nota" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">Su camino · toca una etapa para moverla</small>'+fuera+
+     '<div class="camino">'+C.map(function(x,k){return '<button type="button" class="'+(k<ic?'hecha':k===ic?'actual':'')+'" data-act="ir-etapa" data-v="'+x[0]+'" aria-label="Mover a '+esc(x[1])+'"><i></i>'+esc(x[1])+'</button>'}).join('')+'</div></section>'+
+   '<section class="accion"><small class="nota">Lo que toca ahora</small><div class="preg">'+esc(preg)+'</div>'+avisoSeg+(acciones?'<div class="fila">'+acciones+'</div>':'')+
+     (em&&em.fecha?'<label class="campo" for="fp-cita">Fecha de '+esc(em.nombre.toLowerCase())+'<small>La app te avisa el día antes.</small><input type="date" id="fp-cita" data-pf="citaEn" value="'+esc(p.citaEn)+'"></label>':'')+'</section>'+
+   '<details class="sec grp"'+((e==='listo'||e==='nuevo'||e==='contactada'||e==='descanso')?' open':'')+'><summary>'+(esSeg?'Mensaje de seguimiento':'Mensaje para enviar')+' <span class="cnt">editar</span></summary>'+
+     '<label class="campo" for="fp-mensaje"><span hidden>Mensaje</span><textarea id="fp-mensaje" data-pf="'+msjCampo+'" style="min-height:110px">'+esc(msjTxt)+'</textarea></label>'+
+     '<div class="fila">'+(wa?'<a class="btn wa" id="fp-wa" href="'+esc(wa)+'" target="_blank" rel="noopener">Abrir WhatsApp con este mensaje</a>':'')+'<button class="btn '+(wa?'sec2':'')+'" data-act="copiar">Copiar mensaje</button>'+(IA?'<button class="btn sec2" data-act="ia-msj"'+(ocupada?' disabled':'')+'>'+(ocupada==='msj'?'Pensando…':'Escribir con IA')+'</button>':'')+'</div>'+
+     (wa||p.canal!=='whatsapp'?'':'<p class="nota">Agrega su WhatsApp en "Sus datos" para abrir el chat directo.</p>')+'</details>'+
+   '<section class="sec"><small class="nota" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">Qué tan cercana es</small><div class="opcs">'+GRUPOS.map(function(g){return '<button type="button" class="opc" data-act="pgrupo" data-v="'+g[0]+'" aria-pressed="'+(grupoDe(p)===g[0])+'">'+g[1].replace(/^\S+\s/,'')+'</button>'}).join('')+'</div></section>'+
+   '<details class="sec grp"><summary>Sus datos y notas <span class="cnt">ver</span></summary>'+
      '<label class="campo" for="fp-tel">WhatsApp<small>Con código de país, ej: +56 9 1234 5678.</small><input type="text" id="fp-tel" data-pf="telefono" inputmode="tel" value="'+esc(p.telefono)+'"></label>'+
-     (p.canal==='whatsapp'?'':linksPerfil(p)+
-     '<label class="campo" for="fp-perfil">Enlace a su '+CANALES[p.canal]+'<small>Cuando lo encuentres, pégalo aquí y queda guardado.</small><input type="url" id="fp-perfil" data-pf="perfil" inputmode="url" value="'+esc(p.perfil)+'"></label>')+
+     (p.canal==='whatsapp'?'':linksPerfil(p)+'<label class="campo" for="fp-perfil">Enlace a su '+CANALES[p.canal]+'<input type="url" id="fp-perfil" data-pf="perfil" inputmode="url" value="'+esc(p.perfil)+'"></label>')+
      '<label class="campo" for="fp-dolor">Qué le duele<small>En una frase, con sus palabras.</small><input type="text" id="fp-dolor" data-pf="dolor" value="'+esc(p.dolor)+'"></label>'+
      '<label class="campo" for="fp-acuerdo">En qué quedamos<input type="text" id="fp-acuerdo" data-pf="acuerdo" value="'+esc(p.acuerdo)+'"></label>'+
-     '<label class="campo" for="fp-notas">Notas<small>Lo que viste de esta persona o lo último que conversaron (puedes pegar el chat).</small><textarea id="fp-notas" data-pf="notas">'+esc(p.notas)+'</textarea></label></section>'+
+     '<label class="campo" for="fp-prox">Próximo contacto<small>Cámbiala si quedaron en otra fecha.</small><input type="date" id="fp-prox" data-pf="proximoSeg" value="'+esc(p.proximoSeg)+'"></label>'+
+     '<label class="campo" for="fp-notas">Notas<small>Lo que viste de esta persona o lo último que conversaron (puedes pegar el chat).</small><textarea id="fp-notas" data-pf="notas">'+esc(p.notas)+'</textarea></label></details>'+
+   (histo.length?'<details class="sec grp"><summary>Historial <span class="cnt">'+histo.length+'</span></summary><ul class="histo">'+histo.map(function(x){return '<li>'+esc(x.f)+' · '+esc(x.t)+'</li>'}).join('')+'</ul></details>':'')+
    '<details class="sec grp"><summary>Calificar con puntaje <span class="cnt">opcional</span></summary>'+
      (IA?'<div><button class="btn suave" data-act="ia-cal"'+(ocupada?' disabled':'')+'>'+(ocupada==='cal'?'Pensando…':p.calificado?'Volver a calificar con IA':'Calificar con IA')+'</button></div>':'')+
      (p.motivo?'<p class="nota">'+esc(p.motivo)+'</p>':'')+
      DIMS.map(function(d){return '<div class="dim"><div class="cab"><span>'+d[2]+'</span><span>'+(p.calificado?p[d[0]]:'–')+' / 5</span></div>'+
        '<p class="nota">'+esc(sen[d[1]].join(' · '))+'</p><div class="escala" role="group" aria-label="'+d[2]+'">'+[0,1,2,3,4,5].map(function(n){
-         return '<button data-act="punto" data-d="'+d[0]+'" data-v="'+n+'" aria-pressed="'+(p.calificado&&Number(p[d[0]])===n)+'">'+n+'</button>'}).join('')+'</div></div>'}).join('')+'</details></div>';
+         return '<button data-act="punto" data-d="'+d[0]+'" data-v="'+n+'" aria-pressed="'+(p.calificado&&Number(p[d[0]])===n)+'">'+n+'</button>'}).join('')+'</div></div>'}).join('')+'</details>'+
+   '<div class="fila">'+(e!=='descartada'&&e!=='cliente'?'<button class="btn peligro" data-act="etapa" data-v="descartar">Descartar</button>':'')+
+     '<button class="btn peligro" data-act="borrar">'+(borrarListo?'Toca otra vez para borrar':'Borrar prospecto')+'</button></div></div>';
 }
+/* ---------- Revisar con tarjetas ---------- */
+function colaRevisar(desde){var c=lista().filter(function(x){return x.estado==='revisar'}).sort(function(a,b){return pts(b)-pts(a)}).map(function(x){return x.id});
+  if(desde){var k=c.indexOf(desde);if(k>0){c.splice(k,1);c.unshift(desde)}}return c}
+function hojaRevisar(){var d=hoja,id=d.cola[d.i],p=id&&S.pros[id];
+  var top='<div class="barra"><button data-act="cerrar">‹ Volver</button><span class="nota">Revisando <b>'+Math.min(d.i+1,d.cola.length)+'</b> de '+d.cola.length+'</span></div>'+
+    '<div class="avance" style="border-radius:0;height:6px"><i style="width:'+Math.round(Math.min(d.i,d.cola.length)/Math.max(1,d.cola.length)*100)+'%;border-radius:0"></i></div><div class="wrap">';
+  if(!p)return top+'<section class="tarj" style="align-items:center;text-align:center"><h2>¡Revisaste todo!</h2><div class="fila" style="justify-content:center;gap:22px">'+
+    [['si','calzan','var(--morado)'],['des','después','var(--muted)'],['no','no calzan','#A3341A']].map(function(x){return '<div><b style="font-size:1.5rem;color:'+x[2]+'">'+d.c[x[0]]+'</b><br>'+x[1]+'</div>'}).join('')+
+    '</div><p class="nota">Las que calzan quedaron en "'+esc(nombreFija('listo'))+'".</p><button class="btn" data-act="cerrar">Listo</button></section></div>';
+  var bio=String(p.notas||'').split('\n'),usu=bio[0]&&bio[0].charAt(0)==='@'?bio.shift():'';
+  return top+'<section class="tarj"><div style="display:flex;align-items:center;gap:12px"><span class="av" style="width:56px;height:56px;font-size:1.15rem;background:'+(COLOR_G[grupoDe(p)]||'#6B6478')+'">'+esc(iniciales(p.nombre))+'</span>'+
+    '<div style="flex:1;min-width:0"><h2 style="font-size:1.25rem">'+esc(p.nombre)+'</h2><p class="nota">'+esc(usu||CANALES[p.canal])+'</p></div>'+(p.calificado?insignia(p):'')+'</div>'+
+    '<p style="line-height:1.5">'+esc(bio.join(' ').slice(0,400)||'Sin descripción.')+'</p>'+
+    (p.motivo?'<div style="background:var(--dorado-suave,#FBF6EC);border-radius:12px;padding:10px 12px"><small class="nota" style="font-weight:600;text-transform:uppercase">Por qué calzaría</small><p style="font-size:.9rem">'+esc(p.motivo.replace(/^Puntaje automático:\s*/,''))+'</p></div>':'')+
+    linksPerfil(p)+'</section>'+
+    (d.motivo?'<section class="sec"><b>¿Por qué no calza?</b><div class="opcs">'+MOTIVOS.map(function(m){return '<button type="button" class="opc" data-act="rev-motivo" data-v="'+m[0]+'">'+m[1]+'</button>'}).join('')+'<button type="button" class="opc" data-act="rev-motivo" data-v="otro">Saltar</button></div></section>':
+    '<div class="trio"><button type="button" class="no" data-act="rev" data-v="no">✕<br>No calza</button><button type="button" data-act="rev" data-v="des">❙❙<br>Después</button><button type="button" class="si" data-act="rev" data-v="si">✓<br>Calza</button></div>')+'</div>'}
+
 function linksPerfil(p){
   var dom={instagram:'instagram.com',linkedin:'linkedin.com',facebook:'facebook.com'}[p.canal],ok=/^https?:\/\//i;
   var perfil=ok.test(p.perfil)?p.perfil:(dom&&ok.test(p.link)&&p.link.indexOf(dom)>-1?p.link:''),L=[];
@@ -1137,6 +1293,22 @@ document.addEventListener('click',function(ev){
   if(a==='cambiar-clave'){var nc=($('#nueva-clave')||{}).value||'';if(nc.length<6){toast('La contraseña necesita al menos 6 caracteres.');return}
     SB.auth.updateUser({password:nc}).then(function(r){if(r.error)throw r.error;$('#nueva-clave').value='';toast('Listo, tu contraseña nueva quedó guardada.')}).catch(function(){toast('No se pudo cambiar. Inténtalo de nuevo.')});return}
   if(a==='bus-ir'){buscarAuto();return}
+  if(a==='hoy-hecho'){var ph=S.pros[v];if(!ph)return;var m0=b.dataset.m;if(m0==='enviada'&&!ph.mensaje)ph.mensaje=mensajeBase(ph);if(m0==='seguimiento'&&!ph.mensajeSeg)ph.mensajeSeg=mensajeBase(ph);
+    mover(ph,m0);render();toast(m0==='enviada'?'¡Bien! Te aviso en '+seg().primero+' días si no responde.':ph.estado==='descanso'?'Sin respuesta: queda descansando hasta el '+ph.proximoSeg+'.':m0==='retomar'?'Vuelve a Por contactar.':'Anotado. Próximo seguimiento el '+ph.proximoSeg+'.');return}
+  if(a==='revisar-ir'){var cola=colaRevisar(v);if(!cola.length){toast('No hay nadie por revisar.');return}hoja={tipo:'revisar',cola:cola,i:0,c:{si:0,des:0,no:0},motivo:false};pintaHoja();$('#hoja').scrollTop=0;return}
+  if(a==='rev'){var pr=S.pros[hoja.cola[hoja.i]];if(!pr)return;if(v==='no'){hoja.motivo=true;pintaHoja();return}
+    if(v==='si')mover(pr,'calza');hoja.c[v]++;hoja.i++;pintaHoja();render();return}
+  if(a==='rev-motivo'){var pr2=S.pros[hoja.cola[hoja.i]];if(pr2)mover(pr2,'nocalza:'+v);hoja.c.no++;hoja.i++;hoja.motivo=false;pintaHoja();render();return}
+  if(a==='menu-p'){S.menuP=S.menuP===v?'':v;var lp0=$('#lista-pros');if(lp0)lp0.innerHTML=listaPros();else render();return}
+  if(a==='mover-a'){var pm=S.pros[v];if(pm){irEtapa(pm,b.dataset.m);S.menuP='';render();toast('Movida a '+nombreEtapa(pm.estado)+'.')}return}
+  if(a==='grupo-a'){var pg2=S.pros[v];if(pg2){pg2.grupo=b.dataset.m;anota(pg2,'Grupo: '+nombreGrupo(pg2.grupo));Store.pro(pg2);var lp1=$('#lista-pros');if(lp1)lp1.innerHTML=listaPros()}return}
+  if(a==='bus-vista'){BUS.vista=v;render();return}
+  if(a==='bus-canal'){BUS.canal=v;BUS.paso='';render();return}
+  if(a==='bus-modo'){BUS.modo=v;BUS.paso='';render();return}
+  if(a==='gr-ordenar'){var tg=$('#gr-txt');if(tg)BUS.grTxt=tg.value;ordenarGratis();return}
+  if(a==='gr-add'){agregarGratis(Number(v),false);toast('Agregado a tu lista.');return}
+  if(a==='gr-despues'){agregarGratis(Number(v),true);toast('Guardado en Por revisar.');return}
+  if(a==='gr-no'){var gr=(BUS.gr||[])[Number(v)];if(gr){gr.hecho='No calza';render()}return}
   if(a==='reintentar'){arrancar();return}
   if(a==='bus-recuperar'){recuperarUltima();return}
   if(a==='gratis-sug'){BUS.gratis=v;render();return}
@@ -1155,7 +1327,7 @@ document.addEventListener('click',function(ev){
   if(a==='bus-todos-despues'){var n2=0;(BUS.resultados||[]).forEach(function(r,i){if(!BUS.marca[i]&&agregarResultado(i,true))n2++});toast(n2?n2+' guardados en Por revisar.':'No quedaban perfiles sin revisar.');render();return}
   if(a==='bus-todos'){var n=0;(BUS.resultados||[]).forEach(function(r,i){if(agregarResultado(i))n++});toast(n?n+' agregados a tu lista.':'Ya estaban todas en tu lista.');render();return}
   if(a==='tab'){S.tab=v;render();window.scrollTo(0,0)}
-  else if(a==='filtro'){S.filtro=v;S.tab='prospectos';render()}
+  else if(a==='filtro'){S.filtro=v;S.menuP='';S.tab='prospectos';render()}
   else if(a==='fgrupo'){S.fg=v;render()}
   else if(a==='fperfil'){S.fp=v;render()}
   else if(a==='perfil-ir'){cambiarPerfil(v);render()}
@@ -1191,6 +1363,7 @@ document.addEventListener('click',function(ev){
     S.pros[np.id]=np;Store.pro(np);hoja={tipo:'pro',id:np.id};pintaHoja();render();$('#hoja').scrollTop=0;
     if(v==='ia')calificarIA(np);else toast('Guardado en '+nombreEtapa('listo')+'.')}
   else if(!p){return}
+  else if(a==='ir-etapa'){irEtapa(p,v);pintaHoja();toast('Ahora está en: '+nombreEtapa(p.estado)+'.')}
   else if(a==='pgrupo'){p.grupo=v;anota(p,'Grupo: '+nombreGrupo(v));if(v==='fuera'&&['listo','nuevo','contactada'].indexOf(p.estado)>-1){p.estado='descartada';p.proximoSeg=''}Store.pro(p);pintaHoja()}
   else if(a==='punto'){if(!p.calificado){p.n=p.n||0;p.a=p.a||0;p.c=p.c||0}p[b.dataset.d]=Number(v);p.calificado=true;Store.pro(p);pintaHoja()}
   else if(a==='ia-cal'){calificarIA(p)}
@@ -1202,7 +1375,7 @@ document.addEventListener('click',function(ev){
   else if(a==='borrar'){if(!borrarListo){borrarListo=true;pintaHoja();return}borrarListo=false;Store.borrar(p.id);hoja=null;pintaHoja();render();toast('Prospecto borrado.')}
 });
 document.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&(ev.target.id==='ac-pass'||ev.target.id==='ac-mail')){ev.preventDefault();enviarAcceso()}});
-document.addEventListener('toggle',function(ev){if(ev.target&&ev.target.id==='det-fil')BUS.verFiltros=ev.target.open},true);
+document.addEventListener('toggle',function(ev){if(ev.target&&ev.target.id==='det-fil')BUS.verFiltros=ev.target.open;var hb=ev.target&&ev.target.dataset&&ev.target.dataset.hoyab;if(hb){if(ev.target.open)S.hoyAb=hb;else if(S.hoyAb===hb)S.hoyAb=''}},true);
 document.addEventListener('change',function(ev){
   if(ev.target.id!=='importar'||!ev.target.files[0])return;
   var fr=new FileReader();
@@ -1220,6 +1393,7 @@ document.addEventListener('input',function(ev){
   var t=ev.target,ds=t.dataset;
   if(ds.gratis){BUS.gratis=t.value;var ga=$('#gratis-ir'),gu=urlGratis();if(ga){ga.href=gu||'#';ga.style.opacity=gu?'':'.55';ga.style.pointerEvents=gu?'':'none'}return}
   if(ds.fil){var ff=filtrosDe(canalActual());ff[ds.fil]=t.value;Store.meta();BUS.paso='';return}
+  if(ds.grtxt){BUS.grTxt=t.value;return}
   if(ds.bus){BUS[ds.bus]=ds.bus==='cantidad'?Number(t.value):t.value;BUS.paso='';render();return}
   if(ds.q){S.q=t.value;var lp=$('#lista-pros');if(lp)lp.innerHTML=listaPros();return}
   if(ds.imp&&hoja&&hoja.d){hoja.d[ds.imp]=t.value;var imn=$('#im-n');if(imn)imn.textContent=parsearLista(hoja.d.texto).length+' persona(s) detectada(s).';return}
