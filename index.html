@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.6 (21 oct 2026) -->
+<!-- PROSPECCIÓN INTELIGENTE — APP VERSIÓN 3.7 (21 oct 2026) -->
 <title>Prospección Inteligente</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </body>
@@ -269,7 +269,7 @@ function digitos(t){return String(t||'').replace(/\D/g,'')}
 function waLink(p,txt){var d=digitos(p.telefono);return d.length>=8?'https://wa.me/'+d+(txt?'?text='+encodeURIComponent(txt):''):''}
 var DIMS=[['n','necesidad','Necesidad'],['a','afinidad','Afinidad'],['c','capacidad','Capacidad de compra']];
 
-function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:'',preguntas:['','',''],rutas:[],rutasEdit:{}}}
+function perfilVacio(){return {oferta:'',cliente:'',problema:'',palabras:'',lugar:'',precio:'',baseLista:false,tipos:[],otrosTipos:'',momento:'',senalesSi:'',noQuiero:[],noQuieroTxt:'',categoria:'',categorias:[],momentos:[],momentoTxt:'',genero:'',preguntas:['','',''],rutas:[],rutasEdit:{},paises:[]}}
 var S={meta:{perfil:perfilVacio(),plan:null,hechas:{},metaDiaria:5},
        pros:{},tab:'hoy',filtro:'listo'};
 var IA=null, ocupada='', hoja=null, borrarListo=false, pendiente=false;
@@ -425,7 +425,10 @@ var PAISES=[['cl','Chile'],['mx','México'],['ar','Argentina'],['co','Colombia']
   ['cr','Costa Rica'],['pa','Panamá'],['gt','Guatemala'],['do','Rep. Dominicana'],['es','España'],['us','Estados Unidos'],['br','Brasil']];
 var IDIOMAS=[['es','Español'],['pt','Portugués'],['en','Inglés'],['todos','Cualquier idioma']];
 function idiomaBus(){return S.meta.perfil.idioma||'es'}
-function paisBus(){var p=S.meta.perfil.paisBusqueda;if(p)return p;var L=lugares().map(norm);var m=PAISES.filter(function(x){return L.indexOf(norm(x[1]))>-1})[0];return m?m[0]:'cl'}
+function paisesBus(){var p=S.meta.perfil;if(Array.isArray(p.paises)&&p.paises.length)return p.paises;if(p.paisBusqueda)return [p.paisBusqueda];
+  var L=lugares().map(norm),m=PAISES.filter(function(x){return L.indexOf(norm(x[1]))>-1}).map(function(x){return x[0]});return m.length?m.slice(0,5):['cl']}
+function paisBus(){return paisesBus()[0]}
+function nombresPaises(){return paisesBus().map(function(c){return (PAISES.filter(function(x){return x[0]===c})[0]||['',c])[1]}).join(', ')}
 var MODOS_IG=[['todo','En todo','Nombre, bio y publicaciones. Trae más variedad.'],['nombre','Nombre del perfil','Quienes ponen la palabra en su nombre, ej: "Ana | Coach de vida".'],
   ['bio','Bio','Quienes escriben esas palabras en su bio.'],['publicaciones','Reels y carruseles','Quienes hablan de eso en sus publicaciones.'],
   ['hashtag','Hashtag','Publicaciones recientes con ese hashtag. Escribe un hashtag por línea, sin # ni espacios (ej: coachdevida).']];
@@ -543,7 +546,7 @@ var ADMIN_EMAIL='conyenrione@gmail.com';
 var RUTAS_MENTORA=[];
 function esAdmin(){return String(EMAIL||'').toLowerCase()===ADMIN_EMAIL}
 async function cargarRutasMentora(){try{var r=await SB.from('pi_rutas').select('*');if(!r.error)RUTAS_MENTORA=r.data||[]}catch(e){}}
-function g(q){var i=idiomaBus();return 'https://www.google.com/search?q='+encodeURIComponent(q)+(i!=='todos'?'&lr=lang_'+i:'')+'&cr=country'+paisBus().toUpperCase()+'&gl='+paisBus()}
+function g(q){var i=idiomaBus();return 'https://www.google.com/search?q='+encodeURIComponent(q)+(i!=='todos'?'&lr=lang_'+i:'')+'&cr='+paisesBus().map(function(c){return 'country'+c.toUpperCase()}).join('|')+'&gl='+paisBus()}
 function palabraRuta(){return palabrasCliente()[0]||comas(S.meta.perfil.otrosTipos)[0]||'coach'}
 function rellenar(u){var L=lugares();return String(u||'').replace(/\{palabra\}/g,encodeURIComponent(palabraRuta())).replace(/\{lugar\}/g,encodeURIComponent(L[0]||''))}
 function rutasPerfil(){
@@ -692,7 +695,7 @@ async function buscarAuto(){
   BUS.canal=canal;BUS.paso='';BUS.cargando=true;BUS.error='';BUS.resultados=null;render();
   try{
     var r=await fetch(CFG.puente.replace(/\/$/,'')+'/buscar',{method:'POST',headers:await cabeceras(),
-      body:JSON.stringify({textos:textos,canal:canal,modo:canal==='instagram'?modoIG():'',idioma:idiomaBus(),pais:paisBus(),cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
+      body:JSON.stringify({textos:textos,canal:canal,modo:canal==='instagram'?modoIG():'',idioma:idiomaBus(),paises:paisesBus(),cantidad:BUS.cantidad,perfilCliente:textoPerfilCliente(),excluir:comas(filtrosDe(canal).excluir),
         filtro:canal==='instagram'?filtroSeg(filtrosDe(canal)):null})});
     var d=await r.json().catch(function(){return {}});
     if(!r.ok)throw new Error(d.error||('El puente respondió '+r.status));
@@ -728,7 +731,7 @@ function vBusqueda(){
    '<div class="panel" style="display:flex;flex-direction:column;gap:12px">'+
    '<div><b style="font-size:.9rem">1. ¿Dónde buscar?</b><div class="opcs" style="margin-top:6px">'+canalesAuto().map(function(x){return '<button type="button" class="opc" data-act="bus-canal" data-v="'+x+'" aria-pressed="'+(c===x)+'">'+CANALES[x]+'</button>'}).join('')+'</div></div>'+
    '<div class="fila"><label class="campo" for="bus-idioma" style="flex:1 1 140px">Idioma<select id="bus-idioma" data-fperfil="idioma">'+IDIOMAS.map(function(x){return '<option value="'+x[0]+'"'+(idiomaBus()===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></label>'+
-     '<label class="campo" for="bus-pais" style="flex:1 1 140px">País<select id="bus-pais" data-fperfil="paisBusqueda">'+PAISES.map(function(x){return '<option value="'+x[0]+'"'+(paisBus()===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></label></div>'+
+     '</div><details class="grp"'+(BUS.verPaises?' open':'')+' id="det-paises"><summary>Países: '+esc(nombresPaises())+' <span class="cnt">cambiar</span></summary><p class="nota">Elige hasta 5. Cada país extra hace la búsqueda un poco más grande.</p><div class="opcs">'+PAISES.map(function(x){return '<button type="button" class="opc" data-act="bus-pais" data-v="'+x[0]+'" aria-pressed="'+(paisesBus().indexOf(x[0])>-1)+'">'+x[1]+'</button>'}).join('')+'</div></details>'+
      '<small class="nota" style="margin-top:-6px">La app descarta a quienes escriben su bio en otro idioma, sin costo cuando se nota antes de abrir el perfil.</small>'+
    (c==='instagram'?'<div><b style="font-size:.9rem">2. ¿En qué parte de Instagram busca tus palabras?</b><div class="opcs" style="margin-top:6px">'+MODOS_IG.map(function(m){return '<button type="button" class="opc" data-act="bus-modo" data-v="'+m[0]+'" aria-pressed="'+(m[0]===modo[0])+'">'+m[1]+'</button>'}).join('')+'</div><p class="nota" style="margin-top:6px">'+esc(modo[2])+'</p></div>':'')+
    '<label class="campo" for="fil-bus"><b style="font-size:.9rem">'+(c==='instagram'?'3':'2')+'. '+(hs?'¿Qué hashtags?':'¿Qué palabras buscar?')+'</b><small>'+(hs?'Un hashtag por línea, sin # ni espacios. Ej: coachdevida, terapeutaholistica.':'Una búsqueda por línea, de 2 a 4 palabras: quién es + lo que ofrece o el lugar. Ej: coach de vida Chile.')+'</small><textarea id="fil-bus" data-fil="busquedas">'+esc(f.busquedas)+'</textarea></label>'+
@@ -740,7 +743,7 @@ function vBusqueda(){
      '<li>La app descarta organizaciones, competencia y lo que pusiste en "Excluir", y te muestra a quienes calzan, con los descartados y su motivo.</li></ol></details>'+
    vFiltros()+vSaldo()+'<p class="costo">'+(regActual()&&regActual().costo?'Tu última búsqueda usó '+fCred(regActual().costo)+' créditos. ':'')+'Esta búsqueda usará aprox. '+(BUS.cantidad<=5?'2 a 4':BUS.cantidad<=10?'4 a 8':'8 a 16')+' créditos. Tarda entre 2 y 5 minutos.</p>'+
    (BUS.paso==='validar'&&!BUS.cargando?vValidacion(canalActual())+
-     '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+' · '+(IDIOMAS.filter(function(x){return x[0]===idiomaBus()})[0]||IDIOMAS[0])[1].toLowerCase()+' · '+(PAISES.filter(function(x){return x[0]===paisBus()})[0]||PAISES[0])[1]+(canalActual()==='instagram'?' · busca en: '+(MODOS_IG.filter(function(m){return m[0]===modoIG()})[0]||MODOS_IG[0])[1].toLowerCase():'')+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+(esHashtag(canalActual())?'#':'')+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
+     '<div class="panel"><b>Esto es lo que se va a buscar</b><p class="nota">Perfil: <b>'+esc(perfilAct().nombre)+'</b> · '+CANALES[canalActual()]+' · '+(IDIOMAS.filter(function(x){return x[0]===idiomaBus()})[0]||IDIOMAS[0])[1].toLowerCase()+' · '+nombresPaises()+(canalActual()==='instagram'?' · busca en: '+(MODOS_IG.filter(function(m){return m[0]===modoIG()})[0]||MODOS_IG[0])[1].toLowerCase():'')+'</p><ul class="senales">'+busquedasListas(canalActual()).slice(0,5).map(function(t){var mala=t.split(/\s+/).filter(Boolean).length<2;return '<li'+(mala?' style="color:var(--cal)"':'')+'>'+(esHashtag(canalActual())?'#':'')+esc(t)+(mala?' ⚠ una sola palabra':'')+'</li>'}).join('')+'</ul>'+
      (busquedasMalas(canalActual()).length?'<p class="error">Una sola palabra trae marcas, gimnasios y cuentas al azar, y igual se cobra. Escribe búsquedas de 2 a 4 palabras (ej: "coach de vida Chile") o agrega tu país en Mi cliente.</p>':'')+'</div>'+
      '<div class="fila">'+(busquedasMalas(canalActual()).length?'':'<button class="btn" data-act="bus-ir">Buscar así</button>')+'<button class="btn sec2" data-act="bus-volver">Volver a editar</button></div>'
      :'<div class="fila"><button class="btn" data-act="bus-revisar"'+(BUS.cargando?' disabled':'')+'>'+(BUS.cargando?'Buscando… no cierres la app':'Revisar y buscar')+'</button>'+(BUS.resultados?'':'<button class="btn sec2" data-act="bus-recuperar"'+(BUS.recuperando?' disabled':'')+'>'+(BUS.recuperando?'Recuperando…':'Recuperar última búsqueda')+'</button>')+'</div>')+
@@ -1421,6 +1424,8 @@ document.addEventListener('click',function(ev){
   if(a==='grupo-a'){var pg2=S.pros[v];if(pg2){pg2.grupo=b.dataset.m;anota(pg2,'Grupo: '+nombreGrupo(pg2.grupo));Store.pro(pg2);var lp1=$('#lista-pros');if(lp1)lp1.innerHTML=listaPros()}return}
   if(a==='bus-vista'){BUS.vista=v;render();return}
   if(a==='bus-canal'){BUS.canal=v;BUS.paso='';render();return}
+  if(a==='bus-pais'){var pp=paisesBus().slice(),kk=pp.indexOf(v);if(kk>-1){if(pp.length>1)pp.splice(kk,1)}else{if(pp.length>=5){toast('Máximo 5 países.');return}pp.push(v)}
+    S.meta.perfil.paises=pp;S.meta.perfil.paisBusqueda='';Store.meta();BUS.verPaises=true;BUS.paso='';render();return}
   if(a==='bus-modo'){BUS.modo=v;BUS.paso='';render();return}
   if(a==='gr-guardar'){hoja={tipo:'guardar',ruta:BUS.rutaUlt||'',texto:'',hechos:[]};pintaHoja();$('#hoja').scrollTop=0;return}
   if(a==='gq-ok'){guardarRapido();return}
